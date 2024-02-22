@@ -4,7 +4,7 @@
   <node name="camera_preprocessing" pkg="perception" type="camera_preprocessing.py" output="screen"/>
 
   <!-- static transformations -->
-  <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_base" args="0 0 0 0 0 0 map base_link" />
-  <node pkg="tf2_ros" type="static_transform_publisher" name="link_to_laser" args="0 0 5 0 0 0 base_link base_laser" />
-
+  <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_base_link" args="0 0 0 0 0 0 map base_link" />
+  <node pkg="tf2_ros" type="static_transform_publisher" name="base_link_to_hokuyo" args="-0.114 0 0.0674 0 0 0 base_link hokuyo" />
+  <node pkg="tf2_ros" type="static_transform_publisher" name="base_link_to_zed_left" args="-0.135 0.053 0.122 0 0 0 base_link zed_left" />
 </launch>

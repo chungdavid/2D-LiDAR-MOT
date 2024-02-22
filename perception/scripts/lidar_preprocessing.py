@@ -5,17 +5,17 @@ import laser_geometry.laser_geometry as lg
 
 class LidarPreprocessor:
     laserscan_topic = '/scan' #the topic to read LaserScan messages from
-    pointcloud2_topic = 'preprocessed_lidar_points_xyz' #the topic to publish PointCloud2 messages to
+    pointcloud2_topic = '/lidar/hokuyo/pointcloud_preprocessed' #the topic to publish PointCloud2 messages to
 
     def __init__(self):
-        self.pub = rospy.Publisher(self.pointcloud2_topic, PointCloud2)
+        self.pub = rospy.Publisher(self.pointcloud2_topic, PointCloud2, queue_size=10)
         self.sub = rospy.Subscriber(self.laserscan_topic, LaserScan, self.lidar_preprocessing_pipeline)
         self.projector = lg.LaserProjection() #http://wiki.ros.org/laser_geometry#Python_Usage
 
     def lidar_preprocessing_pipeline(self, msg):
         #project to xyz coordinates and publish
         pc2 = self.projector.projectLaser(msg)
-        pc2.header.frame_id = 'base_laser'
+        pc2.header.frame_id = 'hokuyo'
 
         self.pub.publish(pc2)
 
