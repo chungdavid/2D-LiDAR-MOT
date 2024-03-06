@@ -9,6 +9,7 @@ project(perception)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   rospy
+  roscpp
   std_msgs
 )
 
@@ -132,7 +133,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/perception_node.cpp)
+add_executable(lidar_object_detection src/lidar_object_detection.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -148,6 +149,7 @@ include_directories(
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+target_link_libraries(lidar_object_detection ${catkin_LIBRARIES})
 
 #############
 ## Install ##
@@ -161,6 +163,7 @@ include_directories(
 catkin_install_python(PROGRAMS
   scripts/lidar_preprocessing.py
   scripts/camera_preprocessing.py
+  scripts/lidar_object_detection.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
