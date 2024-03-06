@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   roscpp
   std_msgs
+  laser_geometry
 )
 
 ## System dependencies are found with CMake's conventions
@@ -133,6 +134,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
+add_executable(lidar_preprocessing src/lidar_preprocessing.cpp)
 add_executable(lidar_object_detection src/lidar_object_detection.cpp)
 
 ## Rename C++ executable without prefix
@@ -149,6 +151,7 @@ add_executable(lidar_object_detection src/lidar_object_detection.cpp)
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+target_link_libraries(lidar_preprocessing ${catkin_LIBRARIES})
 target_link_libraries(lidar_object_detection ${catkin_LIBRARIES})
 
 #############

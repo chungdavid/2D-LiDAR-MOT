@@ -54,38 +54,32 @@ class LidarObjectDetector:
     #adaptive range segmentation
     def cluster_lidar_points(self, ox, oy, od):
         num_points = len(ox)
-        # rospy.loginfo(num_points) #test
         labels = np.full(num_points, 0, np.uint8) #each point has a label, 0 means the point hasn't been touched yet
         cluster_list = []
-        # rospy.loginfo(cluster_list) #test
-        # rospy.loginfo(labels) #test
+
+        # rospy.loginfo(num_points) #test
         
         for i in range(num_points):
-            # if labels[i] != 0: #point has already been checked
-            #     continue
-            # cluster = [i] #create cluster with current point in it
-            # labels[i] = 1 #claim the current point
+            if labels[i] != 0: #point has already been checked
+                continue
+            cluster = [i] #create cluster with current point in it
+            labels[i] = 1 #claim the current point
             neighbours = self.find_neighbours(i, num_points, ox, oy, od) #note that neighbours contain the current point
 
-        #     j = 0
-        #     while j < len(neighbours):
-        #         point = neighbours[j]
-        #         if labels[point]==0: #point is not claimed
-        #             labels[point]=1 #claim the point
-        #             cluster.append(point) #add the point to the cluster
-        #             point_neighbours = self.find_neighbours(point, num_points, ox, oy, od)
-        #             neighbours = neighbours + point_neighbours
-        #         j+=1
-        #     cluster_list.append(cluster)
+            j = 0
+            while j < len(neighbours):
+                point = neighbours[j]
+                if labels[point]==0: #point is not claimed
+                    labels[point]=1 #claim the point
+                    cluster.append(point) #add the point to the cluster
+                    point_neighbours = self.find_neighbours(point, num_points, ox, oy, od)
+                    neighbours = neighbours + point_neighbours
+                j+=1
+            cluster_list.append(cluster)
         
-        # rospy.loginfo(cluster_list)
-        # rospy.loginfo(labels)
-        # rospy.loginfo("Cluster finished!")
+        rospy.loginfo(cluster_list)
+        rospy.loginfo("Cluster finished!")
 
-        #options to imporve clustering - downsample using voxel grid
-        #use dbscan instead of euclidean clustering
-        #write in c++ instead of python
-        rospy.loginfo("hello")
         return cluster_list
 
 
