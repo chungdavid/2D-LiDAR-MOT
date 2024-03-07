@@ -37,18 +37,20 @@ public:
         //there is an underlying templating mechanism that serializes sensor_msgs::PointCloud2 into pcl::PCLPointCloud2
         pcl::PCLPointCloud2* pcl_cloud = new pcl::PCLPointCloud2; 
         pcl_conversions::toPCL(cloud, *pcl_cloud);
-        pcl::PCLPointCloud2ConstPtr cloudPtr(pcl_cloud);
+        pcl::PCLPointCloud2ConstPtr pcl_cloud_ptr(pcl_cloud);
         // ROS_INFO("Num points starting: %d",pcl_cloud->width * pcl_cloud->width);
 
         //voxel grid filter
-        pcl::PCLPointCloud2 cloud_filtered;
+        pcl::PCLPointCloud2::Ptr pcl_cloud_filtered_ptr(new pcl::PCLPointCloud2);
         pcl::VoxelGrid<pcl::PCLPointCloud2> sor;
-        sor.setInputCloud (cloudPtr);
+        sor.setInputCloud (pcl_cloud_ptr);
         sor.setLeafSize (0.01, 0.01, 0.01);
-        sor.filter (cloud_filtered);
+        sor.filter (*pcl_cloud_filtered_ptr);
         // ROS_INFO("Num points after voxel filter: %d", cloud_filtered.width * cloud_filtered.width);
 
-        output_pub_.publish(cloud_filtered);
+        //pass through filter
+        
+        output_pub_.publish(*pcl_cloud_filtered_ptr);
     }
 };
 
