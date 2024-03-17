@@ -48,7 +48,7 @@ public:
         pcl::PCLPointCloud2::Ptr pcl_cloud_filtered_ptr(new pcl::PCLPointCloud2);
         pcl::VoxelGrid<pcl::PCLPointCloud2> sor;
         sor.setInputCloud (pcl_cloud_ptr);
-        sor.setLeafSize (0.02, 0.02, 0.02); //2 cm
+        sor.setLeafSize (0.01, 0.01, 0.01); //1 cm
         sor.filter (*pcl_cloud_filtered_ptr);
         // ROS_INFO("Num points after voxel filter: %d", cloud_filtered.width * cloud_filtered.height);
         
@@ -63,7 +63,7 @@ public:
         //filter along x
         pass.setInputCloud(pcl_cloud_cropped_ptr); 
         pass.setFilterFieldName ("x");
-        pass.setFilterLimits (-1, 5);
+        pass.setFilterLimits (-0.5, 3);
         pass.filter (*pcl_cloud_cropped_ptr);
         
         //bilateral or gaussian filter?
