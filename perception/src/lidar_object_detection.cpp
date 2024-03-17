@@ -1,5 +1,5 @@
 #include <ros/ros.h>
-#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -9,19 +9,23 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/common/io.h>
 
+#include "perception/LShapeFitting.hpp"
 
 class LidarObjectDetector {
 private:
     ros::NodeHandle nh_;
     ros::Subscriber input_sub_;
-    ros::Publisher output_pub_;
-    ros::Publisher vis_pub_; //for visualization
+    // ros::Publisher output_pub_;
+    ros::Publisher vis_cluster_pub_; //for visualization
+    ros::Publisher vis_rect_pub_; //for visualization
+    LShapeFitting l_shape_fitter_;//l shape fitting class
 
 public:
     LidarObjectDetector() {
-        input_sub_ = nh_.subscribe("/lidar/hokuyo/pointcloud2_preprocessed", 1000, &LidarObjectDetector::lidarObjectDetectionPipeline, this);
-        output_pub_ = nh_.advertise<pcl::PCLPointCloud2>("/lidar/hokuyo/objects", 1);
-        // vis_pub_ = nh.advertise<visualization_msgs::Marker>( "/visualization/lidar_clusters", 0 );
+        input_sub_ = nh_.subscribe("/lidar/hokuyo/pointcloud2_preprocessed_cropped", 1000, &LidarObjectDetector::lidarObjectDetectionPipeline, this);
+        // output_pub_ = nh_.advertise<pcl::PCLPointCloud2>("/lidar/hokuyo/objects", 1);
+        vis_cluster_pub_ = nh_.advertise<pcl::PCLPointCloud2>( "/visualization/lidar_clusters", 0);
+        vis_rect_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/visualization/lidar_rects", 0);
     }
 
     void lidarObjectDetectionPipeline(const pcl::PCLPointCloud2ConstPtr& msg)
@@ -29,8 +33,8 @@ public:
         //convert msg to pcl::PointXYZ to enable use with other PCL modules
         pcl::PointCloud<pcl::PointXYZ>::Ptr xyz_cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
         pcl::fromPCLPointCloud2(*msg, *xyz_cloud_ptr);
-        ROS_INFO("Height of input cloud: %d. Width of input cloud: %d",msg->height,msg->width);
-        ROS_INFO("Size of pcl::PointCloud<pcl::PointXYZ>: %ld", xyz_cloud_ptr->size());
+        // ROS_INFO("Height of input cloud: %d. Width of input cloud: %d",msg->height,msg->width);
+        // ROS_INFO("Size of pcl::PointCloud<pcl::PointXYZ>: %ld", xyz_cloud_ptr->size());
 
         // Creating the KdTree object for the search method of the extraction
         pcl::search::KdTree<pcl::PointXYZ>::Ptr kd_tree (new pcl::search::KdTree<pcl::PointXYZ>);
@@ -41,59 +45,102 @@ public:
         // specify euclidean cluster parameters
         ec.setClusterTolerance (0.05); // 5cm
         ec.setMinClusterSize (4);
-        ec.setMaxClusterSize (25000);
         ec.setSearchMethod (kd_tree);
         ec.setInputCloud (xyz_cloud_ptr);
         // exctract the indices pertaining to each cluster and store in a vector of pcl::PointIndices
         ec.extract (cluster_indices);
-        ROS_INFO("There are %ld clusters in this scan.",cluster_indices.size());
+        // ROS_INFO("There are %ld clusters in this scan.",cluster_indices.size());
+        
+        //view the clusters in rviz
+        visualizeClusters(cluster_indices, xyz_cloud_ptr);
 
-        pcl::PointCloud<pcl::PointXYZ>::Ptr all_cloud_clusters_ptr(new pcl::PointCloud<pcl::PointXYZ>);
-        for (const auto& cluster : cluster_indices)
-        {
-            pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster_ptr (new pcl::PointCloud<pcl::PointXYZ>);
+        //get each cluster into a matrix  m = [[x1,x2],
+        //                                     [x2,x3]]
+        //fit a rectangle to it and append it to a vector
+        std::vector<RectangleData> rects;
+        for (const auto& cluster : cluster_indices) {
+            int num_points = cluster.indices.size(); //num points in cluster 
+            Eigen::MatrixXf cluster_matrix(2, num_points);
+            int p = 0;
             for (const auto& idx : cluster.indices) {
-                cloud_cluster_ptr->push_back((*xyz_cloud_ptr)[idx]);
+                cluster_matrix(0, p) = (*xyz_cloud_ptr)[idx].x;
+                cluster_matrix(1, p) = (*xyz_cloud_ptr)[idx].y;
+                ++p;
             }
-            cloud_cluster_ptr->width = cloud_cluster_ptr->size();
-            cloud_cluster_ptr->width = 1;
-            cloud_cluster_ptr->is_dense = true;
-            // ROS_INFO("This cluster has %ld points.", cloud_cluster_ptr->size());
-            *all_cloud_clusters_ptr += *cloud_cluster_ptr;
+            RectangleData output_rect;
+            l_shape_fitter_.fitRect(cluster_matrix, output_rect);
+            rects.push_back(output_rect);
         }
 
-        // //using this code for now so we can differentiate the clusters by colour
-        // //for some reason no points show up on rviz, might be because of how I'm setting the x,y,z values
-        // pcl::PointCloud<pcl::PointXYZRGB>::Ptr all_cloud_clusters_ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-        // for (const auto& cluster : cluster_indices)
-        // {
-        //     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster_ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
-        //     int r = rand() % 255;
-        //     int g = rand() % 255;
-        //     int b = rand() % 255;
+        visualizeRects(rects);
+    }
 
-        //     for (const auto& idx : cluster.indices) {
-        //         float x = (*xyz_cloud_ptr)[idx].x;
-        //         float y = (*xyz_cloud_ptr)[idx].y;
-        //         float z = (*xyz_cloud_ptr)[idx].z;
-        //         pcl::PointXYZRGB* xyzrgb_point = new pcl::PointXYZRGB(x, y, z);
-        //         xyzrgb_point->r = r;
-        //         xyzrgb_point->g = g;
-        //         xyzrgb_point->b = b;
-        //         cloud_cluster_ptr->push_back(*xyzrgb_point);
-        //     }
-        //     cloud_cluster_ptr->width = cloud_cluster_ptr->size();
-        //     cloud_cluster_ptr->width = 1;
-        //     cloud_cluster_ptr->is_dense = true;
-        //     ROS_INFO("This cluster has %ld points.", cloud_cluster_ptr->size());
+    void visualizeClusters(std::vector<pcl::PointIndices>& cluster_indices, pcl::PointCloud<pcl::PointXYZ>::Ptr& xyz_cloud_ptr) {
+        // assigns each cluster a different color so it can be visualized in rviz
+        //this function can be improved... the cluster visibility isn't great
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr all_cloud_clusters_ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+        int j = 0;
+        for (const auto& cluster : cluster_indices)
+        {
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster_ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
+            //generate random RGB value
+            std::uint8_t r = 255 * (j%2);
+            std::uint8_t g = 0;
+            std::uint8_t b = 255 - r;
+            ++j;
 
-        //     *all_cloud_clusters_ptr += *cloud_cluster_ptr;
-        // }
-
+            for (const auto& idx : cluster.indices) {
+                pcl::PointXYZRGB xyzrgb_point; 
+                xyzrgb_point.x = (*xyz_cloud_ptr)[idx].x;
+                xyzrgb_point.y = (*xyz_cloud_ptr)[idx].y;
+                xyzrgb_point.z = (*xyz_cloud_ptr)[idx].z;
+                xyzrgb_point.r = r;
+                xyzrgb_point.g = g;
+                xyzrgb_point.b = b;
+                cloud_cluster_ptr->push_back(xyzrgb_point);
+            }
+            *all_cloud_clusters_ptr += *cloud_cluster_ptr;
+        }
         pcl::PCLPointCloud2 objects;
         pcl::toPCLPointCloud2(*all_cloud_clusters_ptr, objects);
         objects.header.frame_id = "hokuyo";
-        output_pub_.publish(objects);
+        vis_cluster_pub_.publish(objects);
+    }
+
+    void visualizeRects(std::vector<RectangleData>& rects) {
+        visualization_msgs::MarkerArray marker_array;
+        int i = 0;
+        for(const auto& rect : rects) {
+            visualization_msgs::Marker marker;
+            marker.header.frame_id = "hokuyo";
+            marker.header.stamp = ros::Time::now();
+            marker.ns = "rectangle";
+            marker.type = visualization_msgs::Marker::LINE_STRIP;
+            marker.action = visualization_msgs::Marker::ADD;
+            marker.id = i;
+            marker.pose.orientation.w = 1.0;
+            marker.color.r = 1.0;
+            marker.color.a = 1.0;
+            marker.scale.x = 0.02;
+
+            geometry_msgs::Point p;
+            std::array<float, 4> pX = rect.getRectPointsX();
+            std::array<float, 4> pY = rect.getRectPointsY(); 
+            ROS_INFO("The points of rect %d are: (%f, %f) (%f, %f) (%f, %f) (%f, %f)", i, pX[0], pY[0], pX[1], pY[1], pX[2], pY[2], pX[3], pY[3]);
+
+            for(int i = 0; i < 4; ++i) {
+                p.x = pX[i];
+                p.y = pY[i];
+                marker.points.push_back(p);
+            }
+            p.x = pX[0];
+            p.y = pY[0];
+            marker.points.push_back(p);
+            
+            marker_array.markers.push_back(marker);
+            ++i;
+        }
+        vis_rect_pub_.publish(marker_array);
     }
 };
 

@@ -119,7 +119,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -127,6 +127,8 @@ include_directories(
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/perception.cpp
 # )
+
+add_library(LShapeFitting src/LShapeFitting.cpp src/RectangleData.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -154,7 +156,7 @@ add_executable(lidar_object_detection src/lidar_object_detection.cpp)
 #   ${catkin_LIBRARIES}
 # )
 target_link_libraries(lidar_preprocessing ${catkin_LIBRARIES})
-target_link_libraries(lidar_object_detection ${catkin_LIBRARIES})
+target_link_libraries(lidar_object_detection ${catkin_LIBRARIES} LShapeFitting)
 
 #############
 ## Install ##
@@ -166,9 +168,9 @@ target_link_libraries(lidar_object_detection ${catkin_LIBRARIES})
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
-  scripts/lidar_preprocessing.py
-  scripts/camera_preprocessing.py
-  scripts/lidar_object_detection.py
+  # scripts/lidar_preprocessing.py
+  # scripts/camera_preprocessing.py
+  # scripts/lidar_object_detection.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
