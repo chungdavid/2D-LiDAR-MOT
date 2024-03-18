@@ -7,7 +7,7 @@
 
 #include <pcl/search/kdtree.h>
 #include <pcl/segmentation/extract_clusters.h>
-#include <pcl/common/io.h>
+#include <pcl/common/common.h>
 
 #include "perception/LShapeFitting.hpp"
 
@@ -18,6 +18,7 @@ private:
     // ros::Publisher output_pub_;
     ros::Publisher vis_cluster_pub_; //for visualization
     ros::Publisher vis_rect_pub_; //for visualization
+    ros::Publisher vis_cluster_markers_pub_;
     LShapeFitting l_shape_fitter_;//l shape fitting class
 
 public:
@@ -25,6 +26,7 @@ public:
         input_sub_ = nh_.subscribe("/lidar/hokuyo/pointcloud2_preprocessed_cropped", 1000, &LidarObjectDetector::lidarObjectDetectionPipeline, this);
         // output_pub_ = nh_.advertise<pcl::PCLPointCloud2>("/lidar/hokuyo/objects", 1);
         vis_cluster_pub_ = nh_.advertise<pcl::PCLPointCloud2>( "/visualization/lidar_clusters", 0);
+        vis_cluster_markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>( "/visualization/lidar_cluster_markers", 0);
         vis_rect_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/visualization/lidar_rects", 0);
     }
 
@@ -44,7 +46,7 @@ public:
         pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
         // specify euclidean cluster parameters
         ec.setClusterTolerance (0.05); // 5cm
-        ec.setMinClusterSize (4);
+        ec.setMinClusterSize (6);
         ec.setSearchMethod (kd_tree);
         ec.setInputCloud (xyz_cloud_ptr);
         // exctract the indices pertaining to each cluster and store in a vector of pcl::PointIndices
@@ -52,7 +54,8 @@ public:
         // ROS_INFO("There are %ld clusters in this scan.",cluster_indices.size());
         
         //view the clusters in rviz
-        visualizeClusters(cluster_indices, xyz_cloud_ptr);
+        // visualizeClusters(cluster_indices, xyz_cloud_ptr);
+        visualizeClusterMarkers(cluster_indices, xyz_cloud_ptr);
 
         //get each cluster into a matrix  m = [[x1,x2],
         //                                     [x2,x3]]
@@ -105,6 +108,37 @@ public:
         pcl::toPCLPointCloud2(*all_cloud_clusters_ptr, objects);
         objects.header.frame_id = "hokuyo";
         vis_cluster_pub_.publish(objects);
+    }
+
+    void visualizeClusterMarkers(std::vector<pcl::PointIndices>& cluster_indices, pcl::PointCloud<pcl::PointXYZ>::Ptr& xyz_cloud_ptr) {
+        visualization_msgs::MarkerArray marker_array;
+        int i = 0;
+        for (const auto& cluster : cluster_indices) {
+            Eigen::Vector4f min_p, max_p;
+            pcl::getMinMax3D(*xyz_cloud_ptr, cluster, min_p, max_p);
+            
+            visualization_msgs::Marker marker;
+            marker.header.frame_id = "hokuyo";
+            marker.header.stamp = ros::Time::now();
+            marker.ns = "cluster marker";
+            marker.type = visualization_msgs::Marker::CUBE;
+            marker.action = visualization_msgs::Marker::ADD;
+            marker.id = i;
+            marker.pose.orientation.w = 1.0;
+            marker.color.r = 1.0;
+            marker.color.a = 1.0;
+            Eigen::Vector4f mid_p = (min_p + max_p) / 2; 
+            marker.pose.position.x = mid_p[0]; 
+            marker.pose.position.y = mid_p[1];
+            marker.pose.position.z = mid_p[2];
+            marker.scale.x = max_p[0] - min_p[0];
+            marker.scale.y = max_p[1] - min_p[1];
+            marker.scale.z = 0.001;
+            
+            marker_array.markers.push_back(marker);
+            ++i;
+        }
+        vis_cluster_markers_pub_.publish(marker_array);
     }
 
     void visualizeRects(std::vector<RectangleData>& rects) {
