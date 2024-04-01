@@ -12,6 +12,10 @@ public:
 
     std::array<float, 4> getRectPointsX() const;
     std::array<float, 4> getRectPointsY() const;
+    
+    float getWidth() const;
+    float getLength() const;
+    Eigen::Vector2f getPosition() const;
 
 private:
     static float min_dist_of_closeness_criteria;
@@ -23,6 +27,10 @@ private:
 
     std::array<float, 4> rect_c_x_;
     std::array<float, 4> rect_c_y_;
+
+    float width_;
+    float length_;
+    Eigen::Vector2f position_;
 
     void calc_rect_contour();
 

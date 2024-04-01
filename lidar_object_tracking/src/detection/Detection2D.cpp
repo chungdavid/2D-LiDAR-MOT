@@ -1,5 +1,6 @@
 #include "Detection2D.hpp"
 #include <cfloat>
+#include <iostream>
 
 float Detection2D::min_dist_of_closeness_criteria = 0.01F;
 float Detection2D::d_theta_deg_for_search = 1.0F;
@@ -80,9 +81,11 @@ void Detection2D::rectangle_search(Eigen::MatrixXf& cluster_matrix) {
         if (min_cost[0] < cost) {
             min_cost[0] = cost;
             min_cost[1] = theta;
-            // std::cout<<"Theta value at newest cost: "<<theta<<"\n";;
+            // std::cout<<"Theta value at newest cost: "<<theta<<"\n";
         }
     }
+
+    std::cout<<"Theta value at highest cost: "<<min_cost[1]<<"\n";
 
     //find best rectangle
     Eigen::Matrix2f min_trans;
@@ -95,6 +98,14 @@ void Detection2D::rectangle_search(Eigen::MatrixXf& cluster_matrix) {
     float c1_s_max = c_s.row(0).maxCoeff();
     float c2_s_min = c_s.row(1).minCoeff();
     float c2_s_max = c_s.row(1).maxCoeff();
+
+    Eigen::Vector2f centerPoint;
+    centerPoint << (c1_s_max + c1_s_min)/2.0f, (c2_s_max + c2_s_min)/2.0f;
+    // trans center point to vehicle coordinate
+    centerPoint = min_trans.inverse() * centerPoint;
+    width_ = c2_s_max - c2_s_min;
+    length_ = c1_s_max - c1_s_min;
+    position_ = centerPoint;
 
     a_[0] = cos_s;
     b_[0] = sin_s;
@@ -150,4 +161,14 @@ std::array<float, 4> Detection2D::getRectPointsX() const {
 
 std::array<float, 4> Detection2D::getRectPointsY() const {
     return rect_c_y_;
+}
+
+float Detection2D::getWidth() const {
+    return width_;
+}
+float Detection2D::getLength() const {
+    return length_;
+}
+Eigen::Vector2f Detection2D::getPosition() const {
+    return position_;
 }
