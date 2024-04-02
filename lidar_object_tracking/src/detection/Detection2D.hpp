@@ -1,41 +1,32 @@
 #ifndef DETECTION_2D_H
 #define DETECTION_2D_H
 
-#include <array>
 #include <Eigen/Dense>
+#include <vector>
 
 class Detection2D
 {
 public:
     Detection2D(Eigen::MatrixXf cluster_matrix);
     ~Detection2D();
-
-    std::array<float, 4> getRectPointsX() const;
-    std::array<float, 4> getRectPointsY() const;
     
     float getWidth() const;
     float getLength() const;
     Eigen::Vector2f getPosition() const;
+    Eigen::Matrix3f getRotation() const;
+    std::vector<std::pair<float, float>> getCorners() const;
 
 private:
     static float min_dist_of_closeness_criteria;
     static float d_theta_deg_for_search;
 
-    std::array<float, 3> a_;
-    std::array<float, 3> b_;
-    std::array<float, 3> c_;
-
-    std::array<float, 4> rect_c_x_;
-    std::array<float, 4> rect_c_y_;
-
     float width_;
     float length_;
     Eigen::Vector2f position_;
+    Eigen::Matrix3f rotation_;
+    std::vector<std::pair<float, float>> corner_list_;
 
-    void calc_rect_contour();
-
-    static void calc_cross_point(const float a0, const float a1, const float b0, const float b1, const float c0,
-                                const float c1, float& x, float& y);
+    std::pair<float,float> calc_cross_point(const float a0, const float b0, const float c0, const float a1, const float b1, const float c1);
 
     static float calc_closeness_criterion(Eigen::MatrixXf& c);
 
