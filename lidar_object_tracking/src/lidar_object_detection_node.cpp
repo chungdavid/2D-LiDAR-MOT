@@ -11,8 +11,6 @@
 
 #include "detection/Detection2D.hpp"
 
-// #include <vector>
-
 class LidarObjectDetectionNode {
 private:
     ros::NodeHandle nh_;
@@ -45,8 +43,6 @@ public:
         //convert msg to pcl::PointXYZ to enable use with other PCL modules
         pcl::PointCloud<pcl::PointXYZ>::Ptr xyz_cloud(new pcl::PointCloud<pcl::PointXYZ>);
         pcl::fromPCLPointCloud2(*msg, *xyz_cloud);
-        // ROS_INFO("Height of input cloud: %d. Width of input cloud: %d",msg->height,msg->width);
-        // ROS_INFO("Size of pcl::PointCloud<pcl::PointXYZ>: %ld", xyz_cloud_ptr->size());
 
         //clustering
         kd_tree_->setInputCloud (xyz_cloud);
@@ -70,9 +66,8 @@ public:
         
         //visualize the clusters
         visualizeClusterMarkers(cluster_indices, xyz_cloud);
-        //visualize the detections (rects)
+        //visualize the detections
         visualizeDetections(detections);
-
     }
 
     void visualizeClusterMarkers(std::vector<pcl::PointIndices>& cluster_indices, pcl::PointCloud<pcl::PointXYZ>::Ptr& xyz_cloud_ptr) {
@@ -106,32 +101,52 @@ public:
     void visualizeDetections(std::vector<Detection2D> detections) {
         visualization_msgs::MarkerArray marker_array;
         int i = 0;
+        //for detection boxes (width, length, rotation)
         for(const auto& detection : detections) {
             visualization_msgs::Marker marker;
             marker.header.frame_id = lidar_frame_;
             marker.ns = "detections";
+            marker.type = visualization_msgs::Marker::CUBE;
+            marker.action = visualization_msgs::Marker::ADD;
+            marker.id = i;
+            Eigen::Quaternionf quaternion(detection.getRotation().normalized());
+            marker.pose.orientation.w = quaternion.w();
+            marker.pose.orientation.x = quaternion.x();
+            marker.pose.orientation.y = quaternion.y();
+            marker.pose.orientation.z = quaternion.z();
+            marker.color.r = 1.0;
+            marker.color.a = 0.35;
+            marker.pose.position.x = detection.getPosition()(0); 
+            marker.pose.position.y = detection.getPosition()(1);
+            marker.pose.position.z = 0;
+            marker.scale.x = detection.getWidth();
+            marker.scale.y = detection.getLength();
+            marker.scale.z = 0.001;
+            marker_array.markers.push_back(marker);
+            ++i;
+        }
+        //for rectangle contours
+        for(const auto& detection : detections) {
+            visualization_msgs::Marker marker;
+            marker.header.frame_id = lidar_frame_;
+            marker.ns = "rectangle contours";
             marker.type = visualization_msgs::Marker::LINE_STRIP;
             marker.action = visualization_msgs::Marker::ADD;
             marker.id = i;
             marker.pose.orientation.w = 1.0;
-            marker.color.r = 1.0;
-            marker.color.a = 1.0;
+            marker.color.b = 1.0;
+            marker.color.a = 0.5;
             marker.scale.x = 0.02;
-
             geometry_msgs::Point p;
-            std::array<float, 4> pX = detection.getRectPointsX();
-            std::array<float, 4> pY = detection.getRectPointsY(); 
-            // ROS_INFO("The points of rect %d are: (%f, %f) (%f, %f) (%f, %f) (%f, %f)", i, pX[0], pY[0], pX[1], pY[1], pX[2], pY[2], pX[3], pY[3]);
-
+            std::vector<std::pair<float,float>> corners = detection.getCorners();
             for(int i = 0; i < 4; ++i) {
-                p.x = pX[i];
-                p.y = pY[i];
+                p.x = corners[i].first;
+                p.y = corners[i].second;
                 marker.points.push_back(p);
             }
-            p.x = pX[0];
-            p.y = pY[0];
+            p.x = corners[0].first;
+            p.y = corners[0].second;
             marker.points.push_back(p);
-            
             marker_array.markers.push_back(marker);
             ++i;
         }
