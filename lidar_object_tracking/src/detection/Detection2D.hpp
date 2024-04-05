@@ -13,7 +13,7 @@ public:
     float getWidth() const;
     float getLength() const;
     Eigen::Vector2f getPosition() const;
-    Eigen::Matrix3f getRotation() const;
+    Eigen::Quaternionf getRotation() const;
     std::vector<std::pair<float, float>> getCorners() const;
 
 private:
@@ -23,7 +23,7 @@ private:
     float width_;
     float length_;
     Eigen::Vector2f position_;
-    Eigen::Matrix3f rotation_;
+    Eigen::Quaternionf rotation_;
     std::vector<std::pair<float, float>> corner_list_;
 
     std::pair<float,float> calc_cross_point(const float a0, const float b0, const float c0, const float a1, const float b1, const float c1);

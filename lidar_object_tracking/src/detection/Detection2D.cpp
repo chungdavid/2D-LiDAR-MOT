@@ -75,12 +75,15 @@ void Detection2D::rectangle_search(Eigen::MatrixXf& cluster_matrix) {
     center_point << (c1_s_max + c1_s_min)/2.0F, (c2_s_max + c2_s_min)/2.0F;
     center_point = min_trans.inverse() * center_point; // transform center point to vehicle coordinate
     
-    width_ = c2_s_max - c2_s_min;
-    length_ = c1_s_max - c1_s_min;
+    length_ = c2_s_max - c2_s_min;
+    width_ = c1_s_max - c1_s_min;
     position_ << center_point(0), center_point(1);
-    rotation_ << cosf(-min_cost[1]), sinf(-min_cost[1]), 0,
-                -sinf(-min_cost[1]), cosf(-min_cost[1]), 0,
-                0, 0, 1;
+    // Eigen::Matrix3f rot_mat;
+    // rot_mat << cosf(-min_cost[1]), sinf(-min_cost[1]), 0,
+    //             -sinf(-min_cost[1]), cosf(-min_cost[1]), 0,
+    //             0, 0, 1;
+    Eigen::Quaternionf rot_quat(cosf(min_cost[1]/2.0F), 0.0F, 0.0F, sinf(min_cost[1]/2.0F)); //w, x, y, z
+    rotation_ = rot_quat;
 
     float a1 = cos_s;
     float b1 = sin_s;
@@ -118,7 +121,7 @@ float Detection2D::getLength() const {
 Eigen::Vector2f Detection2D::getPosition() const {
     return position_;
 }
-Eigen::Matrix3f Detection2D::getRotation() const {
+Eigen::Quaternionf Detection2D::getRotation() const {
     return rotation_;
 }
 std::vector<std::pair<float,float>> Detection2D::getCorners() const {
