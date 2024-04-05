@@ -25,20 +25,26 @@ private:
     pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec_;
 
     std::string lidar_frame_;
+    bool visualization_enabled_;
 
 public:
     LidarObjectDetectionNode() : kd_tree_(new pcl::search::KdTree<pcl::PointXYZ>) {
         input_cloud_sub_ = nh_.subscribe("/lidar/hokuyo/pointcloud2_preprocessed_cropped", 1000, &LidarObjectDetectionNode::lidarObjectDetectionPipeline, this);
         output_detections_pub_ = nh_.advertise<custom_msgs::Detection2DArray>( "/lidar/hokuyo/detections_2d", 0);
 
-        vis_cluster_markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>( "/visualization/lidar_cluster_markers", 0);
-        vis_detections_pub_ = nh_.advertise<visualization_msgs::MarkerArray>( "/visualization/lidar_detections", 0);
-
         ec_.setClusterTolerance (0.10); // 5cm
         ec_.setMinClusterSize (15);
         ec_.setSearchMethod (kd_tree_);
 
         lidar_frame_ = "hokuyo";
+        nh_.getParam("/lidar_object_detection/visualization_enabled", visualization_enabled_);
+        if(visualization_enabled_) {
+            ROS_INFO("Visualiation has been enabled for lidar_object_detection_node.");
+            vis_cluster_markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>( "/visualization/lidar_cluster_markers", 0);
+            vis_detections_pub_ = nh_.advertise<visualization_msgs::MarkerArray>( "/visualization/lidar_detections", 0);
+        } else {
+            ROS_INFO("Visualiation has been disabled for lidar_object_detection_node.");
+        }
     }
 
     void lidarObjectDetectionPipeline(const pcl::PCLPointCloud2ConstPtr& msg)
@@ -85,10 +91,13 @@ public:
 
         //publish the detections
         output_detections_pub_.publish(detection_msg_array);
-        //visualize the clusters
-        visualizeClusterMarkers(cluster_indices, xyz_cloud);
-        //visualize the detections
-        visualizeDetections(detections);
+
+        if(visualization_enabled_) {
+            //visualize the clusters
+            visualizeClusterMarkers(cluster_indices, xyz_cloud);
+            //visualize the detections
+            visualizeDetections(detections);
+        }
     }
 
     void visualizeClusterMarkers(std::vector<pcl::PointIndices>& cluster_indices, pcl::PointCloud<pcl::PointXYZ>::Ptr& xyz_cloud_ptr) {

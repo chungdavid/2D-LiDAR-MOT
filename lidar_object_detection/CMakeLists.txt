@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(lidar_object_tracking)
+project(lidar_object_detection)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -106,7 +106,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES lidar_object_tracking
+#  LIBRARIES lidar_object_detection
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
 )
@@ -126,7 +126,7 @@ add_library(lidar_object_detection
     src/detection/Detection2D.cpp
 )
 
-# add_library(lidar_object_tracking
+# add_library(lidar_object_detection
 #     #add stuff
 # )
 
@@ -143,7 +143,6 @@ add_library(lidar_object_detection
 
 add_executable(lidar_preprocessing_node src/lidar_preprocessing_node.cpp)
 add_executable(lidar_object_detection_node src/lidar_object_detection_node.cpp)
-add_executable(lidar_object_tracking_node src/lidar_object_tracking_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -161,7 +160,6 @@ add_executable(lidar_object_tracking_node src/lidar_object_tracking_node.cpp)
 # )
 target_link_libraries(lidar_preprocessing_node ${catkin_LIBRARIES})
 target_link_libraries(lidar_object_detection_node lidar_object_detection ${catkin_LIBRARIES})
-target_link_libraries(lidar_object_tracking_node  ${catkin_LIBRARIES})
 
 
 
@@ -212,7 +210,7 @@ target_link_libraries(lidar_object_tracking_node  ${catkin_LIBRARIES})
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_lidar_object_tracking.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_lidar_object_detection.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
