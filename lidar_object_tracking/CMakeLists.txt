@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
     laser_geometry
     pcl_ros
     pcl_conversions
+    custom_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -142,7 +143,7 @@ add_library(lidar_object_detection
 
 add_executable(lidar_preprocessing_node src/lidar_preprocessing_node.cpp)
 add_executable(lidar_object_detection_node src/lidar_object_detection_node.cpp)
-# add_executable(lidar_object_tracking_node src/lidar_object_tracking_node.cpp)
+add_executable(lidar_object_tracking_node src/lidar_object_tracking_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -160,7 +161,7 @@ add_executable(lidar_object_detection_node src/lidar_object_detection_node.cpp)
 # )
 target_link_libraries(lidar_preprocessing_node ${catkin_LIBRARIES})
 target_link_libraries(lidar_object_detection_node lidar_object_detection ${catkin_LIBRARIES})
-# target_link_libraries(lidar_object_tracking_node lidar_object_tracking ${catkin_LIBRARIES})
+target_link_libraries(lidar_object_tracking_node  ${catkin_LIBRARIES})
 
 
 
