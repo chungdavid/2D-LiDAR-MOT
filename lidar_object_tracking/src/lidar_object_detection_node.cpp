@@ -10,11 +10,13 @@
 #include <pcl/common/common.h>
 
 #include "detection/Detection2D.hpp"
+#include <custom_msgs/Detection2DArray.h>
 
 class LidarObjectDetectionNode {
 private:
     ros::NodeHandle nh_;
-    ros::Subscriber input_sub_;
+    ros::Subscriber input_cloud_sub_;
+    ros::Publisher output_detections_pub_;
 
     ros::Publisher vis_cluster_markers_pub_;
     ros::Publisher vis_detections_pub_;
@@ -26,7 +28,8 @@ private:
 
 public:
     LidarObjectDetectionNode() : kd_tree_(new pcl::search::KdTree<pcl::PointXYZ>) {
-        input_sub_ = nh_.subscribe("/lidar/hokuyo/pointcloud2_preprocessed_cropped", 1000, &LidarObjectDetectionNode::lidarObjectDetectionPipeline, this);
+        input_cloud_sub_ = nh_.subscribe("/lidar/hokuyo/pointcloud2_preprocessed_cropped", 1000, &LidarObjectDetectionNode::lidarObjectDetectionPipeline, this);
+        output_detections_pub_ = nh_.advertise<custom_msgs::Detection2DArray>( "/lidar/hokuyo/detections_2d", 0);
 
         vis_cluster_markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>( "/visualization/lidar_cluster_markers", 0);
         vis_detections_pub_ = nh_.advertise<visualization_msgs::MarkerArray>( "/visualization/lidar_detections", 0);
@@ -51,19 +54,37 @@ public:
         ec_.extract (cluster_indices);
         
         //perform lshape fitting
+        custom_msgs::Detection2DArray detection_msg_array;
         std::vector<Detection2D> detections;
         for (const auto& cluster : cluster_indices) {
-            int num_points = cluster.indices.size(); //num points in cluster 
-            Eigen::MatrixXf cluster_matrix(2, num_points);
+            Eigen::MatrixXf cluster_matrix(2, cluster.indices.size());
             int p = 0;
             for (const auto& idx : cluster.indices) {
                 cluster_matrix(0, p) = (*xyz_cloud)[idx].x;
                 cluster_matrix(1, p) = (*xyz_cloud)[idx].y;
                 ++p;
             }
-            detections.push_back(Detection2D(cluster_matrix));
+            Detection2D detection_obj = Detection2D(cluster_matrix);
+            detections.push_back(detection_obj); //only for visualization
+            //package the detection into a message
+            custom_msgs::Detection2D detection_msg;
+            detection_msg.header.frame_id = lidar_frame_;
+            detection_msg.length = detection_obj.getLength();
+            detection_msg.width = detection_obj.getWidth();
+            Eigen::Quaternionf quat = detection_obj.getRotation();
+            detection_msg.pose.orientation.w = quat.w();
+            detection_msg.pose.orientation.x = quat.x();
+            detection_msg.pose.orientation.y = quat.y() ;
+            detection_msg.pose.orientation.z = quat.z() ;
+            Eigen::Vector2f pos = detection_obj.getPosition();
+            detection_msg.pose.position.x = pos(0);
+            detection_msg.pose.position.y = pos(1);
+            detection_msg.pose.position.z = 0.0;
+            detection_msg_array.detections.push_back(detection_msg);
         }
-        
+
+        //publish the detections
+        output_detections_pub_.publish(detection_msg_array);
         //visualize the clusters
         visualizeClusterMarkers(cluster_indices, xyz_cloud);
         //visualize the detections
@@ -109,7 +130,7 @@ public:
             marker.type = visualization_msgs::Marker::CUBE;
             marker.action = visualization_msgs::Marker::ADD;
             marker.id = i;
-            Eigen::Quaternionf quaternion(detection.getRotation().normalized());
+            Eigen::Quaternionf quaternion = detection.getRotation();
             marker.pose.orientation.w = quaternion.w();
             marker.pose.orientation.x = quaternion.x();
             marker.pose.orientation.y = quaternion.y();
@@ -118,7 +139,7 @@ public:
             marker.color.a = 0.35;
             marker.pose.position.x = detection.getPosition()(0); 
             marker.pose.position.y = detection.getPosition()(1);
-            marker.pose.position.z = 0;
+            marker.pose.position.z = 0.0;
             marker.scale.x = detection.getWidth();
             marker.scale.y = detection.getLength();
             marker.scale.z = 0.001;
