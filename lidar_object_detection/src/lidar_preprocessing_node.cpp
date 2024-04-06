@@ -24,7 +24,7 @@ private:
     std::string lidar_frame_; //we have to specify this at the beginning (during preprocessing) because the topic we read the raw hokuyo scan from does not have a frame id
 
 public:
-    LidarPreprocessingNode() {
+    LidarPreprocessingNode() : nh_() {
         input_sub_ = nh_.subscribe("/scan", 1000, &LidarPreprocessingNode::lidarPreprocessingPipeline, this);
         output_pub_ = nh_.advertise<pcl::PCLPointCloud2>("/lidar/hokuyo/pointcloud2_preprocessed", 1);
         output_pub_cropped_ = nh_.advertise<pcl::PCLPointCloud2>("/lidar/hokuyo/pointcloud2_preprocessed_cropped", 1);
@@ -59,12 +59,12 @@ public:
         //filter along y
         pass_.setInputCloud(pcl_cloud_filtered); 
         pass_.setFilterFieldName ("y");
-        pass_.setFilterLimits (-0.5,0.5);
+        pass_.setFilterLimits (-1.5,1.5);
         pass_.filter (*pcl_cloud_cropped);
         //filter along x
         pass_.setInputCloud(pcl_cloud_cropped); 
         pass_.setFilterFieldName ("x");
-        pass_.setFilterLimits (1, 2);
+        pass_.setFilterLimits (0.25, 2);
         pass_.filter (*pcl_cloud_cropped);
         
         //bilateral or gaussian filter?

@@ -126,10 +126,6 @@ add_library(lidar_object_detection
     src/detection/Detection2D.cpp
 )
 
-# add_library(lidar_object_detection
-#     #add stuff
-# )
-
 
 
 ## Add cmake target dependencies of the library
@@ -152,7 +148,7 @@ add_executable(lidar_object_detection_node src/lidar_object_detection_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(lidar_object_detection_node ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node

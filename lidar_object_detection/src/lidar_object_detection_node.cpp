@@ -28,7 +28,7 @@ private:
     bool visualization_enabled_;
 
 public:
-    LidarObjectDetectionNode() : kd_tree_(new pcl::search::KdTree<pcl::PointXYZ>) {
+    LidarObjectDetectionNode() : nh_(), kd_tree_(new pcl::search::KdTree<pcl::PointXYZ>) {
         input_cloud_sub_ = nh_.subscribe("/lidar/hokuyo/pointcloud2_preprocessed_cropped", 1000, &LidarObjectDetectionNode::lidarObjectDetectionPipeline, this);
         output_detections_pub_ = nh_.advertise<custom_msgs::Detection2DArray>( "/lidar/hokuyo/detections_2d", 0);
 
@@ -37,7 +37,7 @@ public:
         ec_.setSearchMethod (kd_tree_);
 
         lidar_frame_ = "hokuyo";
-        nh_.getParam("/lidar_object_detection/visualization_enabled", visualization_enabled_);
+        nh_.getParam("/visualization_enabled", visualization_enabled_);
         if(visualization_enabled_) {
             ROS_INFO("Visualiation has been enabled for lidar_object_detection_node.");
             vis_cluster_markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>( "/visualization/lidar_cluster_markers", 0);
