@@ -1,7 +1,6 @@
 <launch>
-  <!-- <arg name="visualization_enabled"/>
-  <param name="visualization_enabled" value="$(arg visualization_enabled)"/> -->
   <!-- C++ Nodes -->
   <node name="$(anon lidar_preprocessing_node)" pkg="lidar_object_detection" type="lidar_preprocessing_node" output="screen"/>
   <node name="$(anon lidar_object_detection_node)" pkg="lidar_object_detection" type="lidar_object_detection_node" output="screen"/>
+  <node name="$(anon lidar_detection_visualization_node)" pkg="lidar_object_detection" type="lidar_detection_visualization_node" output="screen"/>
 </launch>

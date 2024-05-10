@@ -9,22 +9,16 @@ class Detection2D
 public:
     Detection2D(Eigen::MatrixXf cluster_matrix);
     ~Detection2D();
-    
-    float getWidth() const;
-    float getLength() const;
-    Eigen::Vector2f getPosition() const;
-    Eigen::Quaternionf getRotation() const;
-    std::vector<std::pair<float, float>> getCorners() const;
-
-private:
-    static float min_dist_of_closeness_criteria;
-    static float d_theta_deg_for_search;
 
     float width_;
     float length_;
-    Eigen::Vector2f position_;
-    Eigen::Quaternionf rotation_;
+    std::vector<float> position_;
+    float theta_;
     std::vector<std::pair<float, float>> corner_list_;
+    
+private:
+    static float min_dist_of_closeness_criteria;
+    static float d_theta_deg_for_search;
 
     std::pair<float,float> calc_cross_point(const float a0, const float b0, const float c0, const float a1, const float b1, const float c1);
 

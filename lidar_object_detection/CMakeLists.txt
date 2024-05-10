@@ -9,10 +9,10 @@ project(lidar_object_detection)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
     roscpp
+    custom_msgs
     laser_geometry
     pcl_ros
     pcl_conversions
-    custom_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -139,6 +139,7 @@ add_library(lidar_object_detection
 
 add_executable(lidar_preprocessing_node src/lidar_preprocessing_node.cpp)
 add_executable(lidar_object_detection_node src/lidar_object_detection_node.cpp)
+add_executable(lidar_detection_visualization_node src/lidar_detection_visualization_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -149,6 +150,7 @@ add_executable(lidar_object_detection_node src/lidar_object_detection_node.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 add_dependencies(lidar_object_detection_node ${catkin_EXPORTED_TARGETS})
+add_dependencies(lidar_detection_visualization_node ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
@@ -156,6 +158,7 @@ add_dependencies(lidar_object_detection_node ${catkin_EXPORTED_TARGETS})
 # )
 target_link_libraries(lidar_preprocessing_node ${catkin_LIBRARIES})
 target_link_libraries(lidar_object_detection_node lidar_object_detection ${catkin_LIBRARIES})
+target_link_libraries(lidar_detection_visualization_node ${catkin_LIBRARIES})
 
 
 

@@ -77,13 +77,13 @@ void Detection2D::rectangle_search(Eigen::MatrixXf& cluster_matrix) {
     
     length_ = c2_s_max - c2_s_min;
     width_ = c1_s_max - c1_s_min;
-    position_ << center_point(0), center_point(1);
+    position_ = {center_point(0), center_point(1)};
     // Eigen::Matrix3f rot_mat;
     // rot_mat << cosf(-min_cost[1]), sinf(-min_cost[1]), 0,
     //             -sinf(-min_cost[1]), cosf(-min_cost[1]), 0,
     //             0, 0, 1;
-    Eigen::Quaternionf rot_quat(cosf(min_cost[1]/2.0F), 0.0F, 0.0F, sinf(min_cost[1]/2.0F)); //w, x, y, z
-    rotation_ = rot_quat;
+    // Eigen::Quaternionf rot_quat(cosf(min_cost[1]/2.0F), 0.0F, 0.0F, sinf(min_cost[1]/2.0F)); //w, x, y, z
+    theta_ = -min_cost[1];
 
     float a1 = cos_s;
     float b1 = sin_s;
@@ -110,20 +110,4 @@ std::pair<float,float> Detection2D::calc_cross_point(const float a0, const float
     float x = (b0 * (-c1) - b1 * (-c0)) / (a0 * b1 - a1 * b0);
     float y = (a1 * (-c0) - a0 * (-c1)) / (a0 * b1 - a1 * b0);
     return std::pair<float,float> (x, y);
-}
-
-float Detection2D::getWidth() const {
-    return width_;
-}
-float Detection2D::getLength() const {
-    return length_;
-}
-Eigen::Vector2f Detection2D::getPosition() const {
-    return position_;
-}
-Eigen::Quaternionf Detection2D::getRotation() const {
-    return rotation_;
-}
-std::vector<std::pair<float,float>> Detection2D::getCorners() const {
-    return corner_list_;
 }
