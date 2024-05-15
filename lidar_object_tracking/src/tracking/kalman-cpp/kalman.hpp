@@ -4,8 +4,8 @@
 *
 *     http://www.cs.unc.edu/~welch/media/pdf/kalman_intro.pdf
 *
-* @author: Hayk Martirosyan
-* @date: 2014.11.15
+* @author: David Chung, adapted from Hayk Martirosyan (original author)
+* @date: 2024.03.31
 */
 
 #pragma once
@@ -18,22 +18,22 @@ public:
 
   /**
   * Create a Kalman filter with the specified matrices.
-  *   A - System dynamics matrix
-  *   C - Output matrix
+  *   A - State Transition Matrix
+  *   H - Observation matrix. multiply a state vector by H to translate it to a measurement vector.
   *   Q - Process noise covariance
   *   R - Measurement noise covariance
   *   P - Estimate error covariance
   */
   // Matrices for computation
-  Eigen::MatrixXd A, C, Q, R, P, K, P0;
+  Eigen::MatrixXd A, H, Q, R, P, K, P0;
 
   KalmanFilter(
       double dt,
       const Eigen::MatrixXd& A,
-      const Eigen::MatrixXd& C,
+      const Eigen::MatrixXd& H,
       const Eigen::MatrixXd& Q,
       const Eigen::MatrixXd& R,
-      const Eigen::MatrixXd& P
+      const Eigen::MatrixXd& P0
   );
 
   /**
@@ -52,25 +52,31 @@ public:
   void init(double t0, const Eigen::VectorXd& x0 );
 
   /**
+   * Predict/estimate next state given current state
+  */
+  void predict();
+
+  /**
   * Update the estimated state based on measured values. The
   * time step is assumed to remain constant.
   */
   void update(const Eigen::VectorXd& y);
 
 
-  void update(const Eigen::VectorXd& y, double dt);
+  // void update(const Eigen::VectorXd& y, double dt);
 
   /**
   * Update the estimated state based on measured values,
   * using the given time step and dynamics matrix.
   */
-  void update(const Eigen::VectorXd& y, double dt, const Eigen::MatrixXd A);
+  // void update(const Eigen::VectorXd& y, double dt, const Eigen::MatrixXd A);
 
-  void changeStates(const Eigen::VectorXd& new_states); 
+  // void changeStates(const Eigen::VectorXd& new_states); 
   /**
   * Return the current state and time.
   */
   Eigen::VectorXd state() { return x_hat; };
+  Eigen::VectorXd predictedState() { return x_hat_new; };
   double time() { return t; };
 
 private:
