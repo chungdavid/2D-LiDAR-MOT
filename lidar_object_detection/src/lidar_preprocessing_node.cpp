@@ -10,12 +10,14 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/passthrough.h>
 
+// #include <iostream>
+
 class LidarPreprocessingNode {
 private:
     ros::NodeHandle nh_;
-    ros::Subscriber input_sub_;
-    ros::Publisher output_pub_;
-    ros::Publisher output_pub_cropped_;
+    ros::Subscriber input_scan_sub_;
+    ros::Publisher output_cloud_pub_;
+    ros::Publisher output_cloud_pub_cropped_;
 
     laser_geometry::LaserProjection projector_;
     pcl::VoxelGrid<pcl::PCLPointCloud2> sor_; //voxel gid filter
@@ -24,11 +26,11 @@ private:
     std::string lidar_frame_; //we have to specify this at the beginning (during preprocessing) because the topic we read the raw hokuyo scan from does not have a frame id
 
 public:
-    LidarPreprocessingNode() : nh_() {
-        input_sub_ = nh_.subscribe("/scan", 1000, &LidarPreprocessingNode::lidarPreprocessingPipeline, this);
-        output_pub_ = nh_.advertise<pcl::PCLPointCloud2>("/lidar/hokuyo/pointcloud2_preprocessed", 1);
-        output_pub_cropped_ = nh_.advertise<pcl::PCLPointCloud2>("/lidar/hokuyo/pointcloud2_preprocessed_cropped", 1);
-        lidar_frame_ = "hokuyo";
+    LidarPreprocessingNode() {
+        input_scan_sub_ = nh_.subscribe("/scan", 1000, &LidarPreprocessingNode::lidarPreprocessingPipeline, this);
+        output_cloud_pub_ = nh_.advertise<pcl::PCLPointCloud2>("/lidar/hokuyo/pointcloud2_preprocessed", 1);
+        output_cloud_pub_cropped_ = nh_.advertise<pcl::PCLPointCloud2>("/lidar/hokuyo/pointcloud2_preprocessed_cropped", 1);
+        lidar_frame_ = "hokuyo"; //change this to a ros_param in the future
 
         sor_.setLeafSize (0.01, 0.01, 0.01); //1 cm
     }
@@ -69,10 +71,14 @@ public:
         
         //bilateral or gaussian filter?
 
+        //this is just to double check that the time stamp is preserved after all the conversions we did   
+        // std::cout << "Timestamp of messsage in: "<< (*msg).header.stamp.sec << (*msg).header.stamp.nsec << "       Timestamp of message out: " << (*pcl_cloud_cropped).header.stamp << "\n"; 
+        //..looks like converting to PCLPointCloud2 changes the stamp from nano seconds to milliseconds
+
         //publish the preprocessed LiDAR data
-        output_pub_.publish(*pcl_cloud_filtered);
+        // output_cloud_pub_.publish(*pcl_cloud_filtered);  
         //publish the preprocessed and cropped lidar data
-        output_pub_cropped_.publish(*pcl_cloud_cropped);
+        output_cloud_pub_cropped_.publish(*pcl_cloud_cropped);
     }
 };
 

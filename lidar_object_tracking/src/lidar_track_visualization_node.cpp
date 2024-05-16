@@ -53,6 +53,7 @@ public:
             track_arrow_marker.color.a = 1.0;
             track_arrow_marker.scale.x = 0.025;    //Shaft diameter of the arrow
             track_arrow_marker.scale.y = 0.05;    //Head  diameter of the arrow
+            track_arrow_marker.pose.orientation.w = 1.0; 
             geometry_msgs::Point p;
             p.x = track_msg.position.x;
             p.y = track_msg.position.y;

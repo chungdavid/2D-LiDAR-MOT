@@ -34,7 +34,7 @@ public:
         int num_tracks = tracks_.size();
         int num_detections = msg->detections.size();
         ros::Time curr_stamp = msg->detections[0].header.stamp;
-        double dt = 0.05; //static for now, will make dynamic later
+        double dt = 0.1; //static for now, will make dynamic later
 
         //init tracks if they don't already exist
         //all tracks are unconfirmed and not coasted
