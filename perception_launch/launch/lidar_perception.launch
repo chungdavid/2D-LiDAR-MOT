@@ -13,12 +13,7 @@
   <arg name="visualization" default="true"/>
   <param name="visualization_enabled" value="$(arg visualization)"/>
 
-  <include file="$(find lidar_object_detection)/launch/lidar_object_detection.launch">
-    <!-- <arg name="visualization_enabled" value="$(arg visualization)"/> -->
-  </include>
-
-  <include file="$(find lidar_object_tracking)/launch/lidar_object_tracking.launch">
-    <!-- <arg name="visualization_enabled" value="$(arg visualization)"/> -->
-  </include>
+  <include file="$(find lidar_object_detection)/launch/lidar_object_detection.launch"/>
+  <include file="$(find lidar_object_tracking)/launch/lidar_object_tracking.launch"/>
 
 </launch>

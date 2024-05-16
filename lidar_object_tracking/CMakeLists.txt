@@ -7,7 +7,13 @@ project(lidar_object_tracking)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  custom_msgs
+)
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+find_package(Eigen REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -113,13 +119,16 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
 # include
-# ${catkin_INCLUDE_DIRS}
+    ${catkin_INCLUDE_DIRS}
+    ${Eigen_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/lidar_object_tracking.cpp
-# )
+add_library(lidar_object_tracking
+  src/tracking/Track2D.cpp
+  src/tracking/kalman-cpp/kalman.cpp
+  src/tracking/hungarian-cpp/Hungarian.cpp
+)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -130,6 +139,8 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/lidar_object_tracking_node.cpp)
+add_executable(lidar_object_tracking_node src/lidar_object_tracking_node.cpp)
+add_executable(lidar_track_visualization_node src/lidar_track_visualization_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -145,6 +156,8 @@ include_directories(
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+target_link_libraries(lidar_object_tracking_node lidar_object_tracking ${catkin_LIBRARIES})
+target_link_libraries(lidar_track_visualization_node lidar_object_tracking ${catkin_LIBRARIES})
 
 #############
 ## Install ##

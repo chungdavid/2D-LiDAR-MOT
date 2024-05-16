@@ -1,6 +1,5 @@
 <launch>
-  <!-- <arg name="visualization_enabled"/>
-  <param name="visualization_enabled" value="$(arg visualization_enabled)"/> -->
   <!-- C++ Nodes -->
   <node name="$(anon lidar_object_tracking_node)" pkg="lidar_object_tracking" type="lidar_object_tracking_node" output="screen"/>
+  <node name="$(anon lidar_track_visualization_node)" pkg="lidar_object_tracking" type="lidar_track_visualization_node" output="screen"/>
 </launch>

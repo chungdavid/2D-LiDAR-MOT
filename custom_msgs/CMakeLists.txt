@@ -52,6 +52,8 @@ add_message_files(
   FILES
   Detection2D.msg
   Detection2DArray.msg
+  Track2D.msg
+  Track2DArray.msg
 )
 
 ## Generate services in the 'srv' folder
