@@ -60,7 +60,7 @@ public:
             p.z = 0;
             track_arrow_marker.points.push_back(p);
             p.x = track_msg.position.x + track_msg.velocity.x;
-            p.y = track_msg.velocity.x + track_msg.velocity.y;
+            p.y = track_msg.position.y + track_msg.velocity.y;
             p.z = 0;
             track_arrow_marker.points.push_back(p);
             marker_array.markers.push_back(track_arrow_marker);
@@ -85,6 +85,8 @@ public:
         }        
 
         vis_tracks_pub_.publish(marker_array);
+        ROS_INFO("Number of tracks coming in: %ld\n", msg->tracks.size());
+        ROS_INFO("Number of markers visualized: %ld\n", marker_array.markers.size());
     }
 };
 
