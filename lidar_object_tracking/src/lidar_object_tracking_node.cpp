@@ -125,11 +125,18 @@ public:
         //tracks that are coasted for 4 time steps are deleted
         for (auto& track : tracks_){
             track.updateDetectionHistory();
-            //TODO - delete tracks that have coasted for too long
-            // if(track.isDeletable()) {
-            //     std::swap(track, tracks_.back());
-            //     tracks_.pop_back();
-            // }
+        }
+
+        int l = 0;
+        int r = tracks_.size();
+        while(l<r) {
+            if(tracks_[l].isDeletable()) {
+                std::swap(tracks_[l], tracks_.back());
+                tracks_.pop_back();
+                --r;
+            } else {
+                ++l;
+            }
         }
 
         //populate detections message with confirmed tracks
