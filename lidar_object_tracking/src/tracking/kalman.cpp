@@ -1,14 +1,14 @@
 /**
 * Implementation of KalmanFilter class.
 *
-* @author: Hayk Martirosyan
-* @date: 2014.11.15
+* @author: David Chung, adapted from Hayk Martirosyan (original author)
+* @date: 2024.03.31
 */
 
 #include <iostream>
 #include <stdexcept>
 
-#include "kalman.hpp"
+#include "lidar_object_tracking/tracking/kalman.hpp"
 
 KalmanFilter::KalmanFilter(
     double dt,

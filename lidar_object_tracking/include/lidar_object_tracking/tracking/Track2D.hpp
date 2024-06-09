@@ -2,7 +2,7 @@
 #define TRACK_2D_H
 
 #include <vector>
-#include "kalman-cpp/kalman.hpp"
+#include "kalman.hpp"
 
 class Track2D
 {
