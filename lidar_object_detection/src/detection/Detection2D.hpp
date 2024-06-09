@@ -1,5 +1,4 @@
-#ifndef DETECTION_2D_H
-#define DETECTION_2D_H
+#pragma once
 
 #include <Eigen/Dense>
 #include <vector>
@@ -26,6 +25,3 @@ private:
 
     void rectangle_search(Eigen::MatrixXf& cluster_matrix);
 };
-
-
-#endif //DETECTION_2D_H
