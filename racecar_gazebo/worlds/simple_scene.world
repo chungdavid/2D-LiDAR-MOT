@@ -1,0 +1,162 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="my_world">
+    <!-- Define a simple ground plane -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <!-- global light source -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <!-- An actor moving around in circles -->
+    <actor name="animated_box_circles_1">
+      <link name="animated_box_circles_1">
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>.5 0.25 0.75</size>
+            </box>
+          </geometry>
+        </visual>
+      </link>
+      <script>
+        <loop>true</loop>
+        <auto_start>true</auto_start>
+        <trajectory id="0" tension="0.3" type="square">
+            <waypoint>
+              <time>0.0</time>
+              <pose>2 1 0 0 0 0</pose>
+            </waypoint>
+            <waypoint>
+              <time>1.0</time>
+              <pose>3 2 0 0 0 1.5708</pose>
+            </waypoint>
+            <waypoint>
+              <time>2.0</time>
+              <pose>2 3 0 0 0 3.14159</pose>
+            </waypoint>
+            <waypoint>
+              <time>3.0</time>
+              <pose>1 2 0 0 0 4.7124</pose>
+            </waypoint>
+            <waypoint>
+              <time>4.0</time>
+              <pose>2 1 0 0 0 6.28312</pose>
+            </waypoint>
+                        <waypoint>
+              <time>5.0</time>
+              <pose>1 2 0 0 0 4.7124</pose>
+            </waypoint>
+            <waypoint>
+              <time>6.0</time>
+              <pose>2 3 0 0 0 3.14159</pose>
+            </waypoint>
+            <waypoint>
+              <time>7.0</time>
+              <pose>3 2 0 0 0 1.5708</pose>
+            </waypoint>
+            <waypoint>
+              <time>8.0</time>
+              <pose>2 1 0 0 0 0</pose>
+            </waypoint>
+        </trajectory>
+      </script>
+    </actor>
+
+    <!-- An actor moving straight -->
+    <actor name="animated_box_straight_1">
+      <link name="animated_box_straight_1">
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>.5 0.25 0.75</size>
+            </box>
+          </geometry>
+        </visual>
+      </link>
+      <script>
+        <loop>true</loop>
+        <auto_start>true</auto_start>
+        <trajectory id="0" tension="0.5" type="line">
+            <waypoint>
+              <time>0.0</time>
+              <pose>1 0 0 0 0 0.5</pose>
+            </waypoint>
+            <waypoint>
+              <time>1.5</time>
+              <pose>3 0.222 0 0 0 0.5</pose>
+            </waypoint>
+            <waypoint>
+              <time>3.0</time>
+              <pose>5 0.444 0 0 0 0.5</pose>
+            </waypoint>
+            <waypoint>
+              <time>3.5</time>
+              <pose>3 0.222 0 0 0 0.5</pose>
+            </waypoint>
+            <waypoint>
+              <time>5.0</time>
+              <pose>1 0 0 0 0 0.5</pose>
+            </waypoint>
+        </trajectory>
+      </script>
+    </actor>
+
+    <!-- An actor moving straight -->
+    <actor name="animated_box_straight_2">
+      <link name="animated_box_straight_2">
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>.25 0.5 0.75</size>
+            </box>
+          </geometry>
+        </visual>
+      </link>
+      <script>
+        <loop>true</loop>
+        <auto_start>true</auto_start>
+        <trajectory id="0" tension="0.5" type="line">
+            <waypoint>
+              <time>0.0</time>
+              <pose>2 -1 0 0 0 0</pose>
+            </waypoint>
+            <waypoint>
+              <time>1.0</time>
+              <pose>2 -2 0 0 0 0</pose>
+            </waypoint>
+            <waypoint>
+              <time>2.0</time>
+              <pose>2 -3 0 0 0 0</pose>
+            </waypoint>
+            <waypoint>
+              <time>3.0</time>
+              <pose>2 -2 0 0 0 0</pose>
+            </waypoint>
+            <waypoint>
+              <time>4.0</time>
+              <pose>2 -1 0 0 0 0</pose>
+            </waypoint>
+        </trajectory>
+      </script>
+    </actor>
+
+    <!-- A still actor -->
+    <model name="static_box_1">
+      <static>true</static>
+      <pose>4 -1 0 0 0 0</pose>
+      <link name="static_box_1">
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>.25 0.25 0.75</size>
+            </box>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>
