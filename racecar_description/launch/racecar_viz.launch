@@ -1,0 +1,16 @@
+<!-- The purpose of this launch file is to visualize the racecar URDF in RViz! -->
+<launch>
+    <!-- Static transform -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_base_footprint" args="0 0 0 0 0 0 map base_footprint" />
+
+    <!-- Robot description -->
+    <param name="robot_description" command="$(find xacro)/xacro '$(find racecar_description)/urdf/racecar_model.xacro'" />
+    
+    <!-- Publish joint states of the robot so it can be visualized in RViz -->
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
+    
+    <node pkg="robot_state_publisher" type="robot_state_publisher"  name="robot_state_publisher"/>
+
+    <!-- Launch RViz -->
+    <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find racecar_description)/rviz/racecar_viz.rviz"/>
+</launch>

@@ -1,0 +1,189 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro"  name="racecar">
+
+    <!-- Inertial tensors for common shapes-->
+    <xacro:include filename="$(find racecar_description)/urdf/inertial_macros.xacro"/>
+
+    <!--Propoerties-->
+    <xacro:property name="body_length" value="${15*2.54/100}"/>
+    <xacro:property name="body_width" value="${6.5*2.54/100}"/>
+    <xacro:property name="body_height" value="${6*2.54/100}"/>
+    <xacro:property name="wheel_radius" value="${2*2.54/100}"/>
+    <xacro:property name="wheel_long_offset" value="${1*2.54/100}" />
+    <xacro:property name="wheel_width" value="${1.5*2.54/100}" />
+
+    <!--Materials-->
+    <material name="red">
+        <color rgba="1 0 0 1" />
+    </material>
+
+    <material name="white">
+        <color rgba="1 1 1 1" />
+    </material>
+
+    <!--Base footprint-->
+    <link name="base_footprint"></link>
+    
+    <joint name="base_footprint__base_link" type="fixed">
+        <origin xyz = "0 0 0"/>
+        <parent link="base_footprint"/>
+        <child link="base_link"/>
+    </joint>
+    
+    <!-- Racecar body (base_link)-->
+    <link name="base_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="${body_length} ${body_width} ${body_height}" />
+            </geometry>
+            <material name="white"/>
+        </visual>
+
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="${body_length} ${body_width} ${body_height}" />
+            </geometry>
+        </collision>
+
+        <xacro:inertial_box mass="1.0" length="${body_length}" width="${body_width}" height="${body_height}">
+            <origin xyz="0 0 0" rpy="0 0 1"/>
+        </xacro:inertial_box>
+    </link>
+
+    <!-- Racecar wheels -->
+    <xacro:macro name="wheel" params="prefix suffix reflect_long reflect_lat">
+
+        <link name="${prefix}_${suffix}_wheel">
+            <!--The origin defines where the center of the visual element should be relative to the actual origin (offset). It does not change the location of the origin-->
+            <visual>
+                <origin xyz="0 0 0" rpy="${pi/2} 0 0" />
+                <geometry>
+                    <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+                </geometry>
+                <material name="red"/>
+            </visual>
+            <collision>
+                <origin xyz="0 0 0" rpy="${pi/2} 0 0" />
+                <geometry>
+                    <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+                </geometry>
+            </collision>
+            <xacro:inertial_cylinder mass="1.0" length="${wheel_width}" radius="${wheel_radius}">
+                <origin xyz="0 0 0" rpy="0 ${pi/2} 0"/>
+            </xacro:inertial_cylinder>
+        </link>
+        
+        <joint name="${prefix}_${suffix}_wheel_joint" type="continuous">
+            <axis xyz="0 1 0" rpy="0 0 0" />
+            <parent link="base_link"/>
+            <child link="${prefix}_${suffix}_wheel"/>
+            <origin xyz="${reflect_long * (body_length/2-(1*2.54/100))} ${reflect_lat * (body_width+wheel_width)/2} ${-1*body_height/2}" rpy="0 0 0"/>
+        </joint>
+
+        <!-- This block provides the simulator (Gazebo) with information on a few additional
+        physical properties. See http://gazebosim.org/tutorials/?tut=ros_urdf for more-->
+        <gazebo reference="${prefix}_${suffix}_wheel">
+            <mu1 value="200.0"/>
+            <mu2 value="100.0"/>
+            <kp value="10000000.0" />
+            <kd value="1.0" />
+            <material>Gazebo/Red</material>
+        </gazebo>
+
+        <!-- This block connects the wheel joint to an actuator (motor), which informs both
+        simulation and visualization of the robot -->
+        <transmission name="${prefix}_${suffix}_wheel_trans">
+            <type>transmission_interface/SimpleTransmission</type>
+            <actuator name="${prefix}_${suffix}_wheel_motor">
+                <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+                <mechanicalReduction>1</mechanicalReduction>
+            </actuator>
+            <joint name="${prefix}_${suffix}_wheel_joint">
+                <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+            </joint>
+        </transmission>
+
+    </xacro:macro>
+
+    <xacro:wheel prefix="front" suffix="left" reflect_long="1" reflect_lat="1"/>
+    <xacro:wheel prefix="front" suffix="right" reflect_long="1" reflect_lat="-1"/>
+    <xacro:wheel prefix="back" suffix="left" reflect_long="-1" reflect_lat="1"/>
+    <xacro:wheel prefix="back" suffix="right" reflect_long="-1" reflect_lat="-1"/>
+
+    <!-- Hokuyo Laser -->
+    <link name="hokuyo_link">
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="0.1 0.1 0.1"/>
+            </geometry>
+        </collision>
+
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <mesh filename="package://racecar_description/meshes/hokuyo.dae"/>
+            </geometry>
+        </visual>
+
+        <inertial>
+            <mass value="1e-5" />
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6" />
+        </inertial>
+    </link>
+
+    <joint name="hokuyo_joint" type="fixed">
+        <axis xyz="0 1 0" />
+        <origin xyz="0 0 ${body_height/2 + 0.05}" rpy="0 0 0"/>
+        <parent link="base_link"/>
+        <child link="hokuyo_link"/>
+    </joint>
+
+    <gazebo reference="hokuyo_link">
+        <sensor type="gpu_ray" name="head_hokuyo_sensor">
+            <pose>0 0 0 0 0 0</pose>
+            <visualize>false</visualize>
+            <update_rate>40</update_rate>
+            <ray>
+                <scan>
+                    <horizontal>
+                        <samples>720</samples>
+                        <resolution>1</resolution>
+                        <min_angle>-1.570796</min_angle>
+                        <max_angle>1.570796</max_angle>
+                    </horizontal>
+                </scan>
+                <range>
+                    <min>0.10</min>
+                    <max>30.0</max>
+                    <resolution>0.01</resolution>
+                </range>
+                <noise>
+                    <type>gaussian</type>
+                    <!-- Noise parameters based on published spec for Hokuyo laser
+                        achieving "+-30mm" accuracy at range < 10m.  A mean of 0.0m and
+                        stddev of 0.01m will put 99.7% of samples within 0.03m of the true
+                        reading. -->
+                    <mean>0.0</mean>
+                    <stddev>0.01</stddev>
+                </noise>
+            </ray>
+            <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_gpu_laser.so">
+                <topicName>/scan</topicName>
+                <frameName>hokuyo_link</frameName>
+            </plugin>
+        </sensor>
+    </gazebo>
+
+    <!--Gazebo ROS control-->
+    <gazebo>
+      <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+        <robotNamespace>/</robotNamespace>
+      </plugin>
+    </gazebo>
+
+</robot>
