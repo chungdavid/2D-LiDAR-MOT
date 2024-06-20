@@ -48,7 +48,11 @@
     <!-- Launch RViz -->
     <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find perception_launch)/rviz/lidar_object_tracking.rviz"/>
 
+    <!-- Nodes -->
     <include file="$(find perception_launch)/launch/lidar_object_detection.launch"/>
     <include file="$(find perception_launch)/launch/lidar_object_tracking.launch"/>
+
+    <!-- Metrics -->
+    <include file="$(find perception_launch)/launch/gazebo_metrics.launch"/>
 
 </launch>

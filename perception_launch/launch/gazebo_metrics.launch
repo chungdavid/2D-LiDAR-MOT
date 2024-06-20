@@ -1,0 +1,5 @@
+<launch>
+    <!-- Perception metrics -->
+    <node pkg="perception_validate" type="perception_metrics_node" name="$(anon perception_metrics_node)" output="screen"/>
+
+</launch>
