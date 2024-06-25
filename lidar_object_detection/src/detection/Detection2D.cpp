@@ -1,4 +1,4 @@
-#include "Detection2D.hpp"
+#include "lidar_object_detection/detection/Detection2D.hpp"
 #include <cfloat>
 
 float Detection2D::min_dist_of_closeness_criteria = 0.01F;
