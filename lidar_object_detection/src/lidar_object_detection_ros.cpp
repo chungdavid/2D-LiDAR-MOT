@@ -60,9 +60,13 @@ void LidarObjectDetectionRos::lidarObjectDetectionPipeline(const pcl::PCLPointCl
     std::vector<pcl::PointIndices> cluster_indices; //vector containing clusters of indices
     ec_.extract (cluster_indices);
     
-    //perform lshape fitting
+    // create the message that will store the detections
     custom_msgs::Detection2DArray detection_msg_array;
-    std::vector<Detection2D> detections;
+    detection_msg_array.header.frame_id = lidar_frame_;
+    detection_msg_array.header.stamp.sec = (*msg).header.stamp / 1000000000;
+    detection_msg_array.header.stamp.nsec = (*msg).header.stamp % 1000000000;
+    
+    //perform lshape fitting
     for (const auto& cluster : cluster_indices) {
         Eigen::MatrixXf cluster_matrix(2, cluster.indices.size()); //note that PCL assumes floats
         int p = 0;
@@ -73,18 +77,15 @@ void LidarObjectDetectionRos::lidarObjectDetectionPipeline(const pcl::PCLPointCl
         }
         
         Detection2D detection_obj = Detection2D(cluster_matrix);
-        detections.push_back(detection_obj); //only for visualization
+        
         //package the detection into a message
         custom_msgs::Detection2D detection_msg;
-        detection_msg.header.frame_id = lidar_frame_;
         detection_msg.length = detection_obj.length_;
         detection_msg.width = detection_obj.width_;
         detection_msg.theta = detection_obj.theta_;
         detection_msg.position.x = detection_obj.position_[0];
         detection_msg.position.y = detection_obj.position_[1];
         detection_msg.position.z = 0.0;
-        detection_msg.header.stamp.sec = (*msg).header.stamp / 1000000000;
-        detection_msg.header.stamp.nsec = (*msg).header.stamp % 1000000000;
         for(auto& corner : detection_obj.corner_list_) {
             geometry_msgs::Point point;
             point.x = corner.first;

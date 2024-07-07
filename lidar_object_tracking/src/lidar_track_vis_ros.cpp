@@ -34,8 +34,8 @@ void LidarTrackVisualizationRos::visualizeLidarTracks(const custom_msgs::Track2D
     for(auto& track_msg : msg->tracks) {
         //bounding box marker
         visualization_msgs::Marker track_box_marker; //visualize the detection
-        track_box_marker.header.frame_id = track_msg.header.frame_id;
-        track_box_marker.header.stamp = track_msg.header.stamp;
+        track_box_marker.header.frame_id = msg->header.frame_id;
+        track_box_marker.header.stamp = msg->header.stamp;
         track_box_marker.ns = "track_box";
         track_box_marker.id = track_msg.id;
         track_box_marker.type = visualization_msgs::Marker::CUBE;
@@ -57,8 +57,8 @@ void LidarTrackVisualizationRos::visualizeLidarTracks(const custom_msgs::Track2D
 
         //arrow marker
         visualization_msgs::Marker track_arrow_marker; //visualize the velocity
-        track_arrow_marker.header.frame_id = track_msg.header.frame_id;
-        track_arrow_marker.header.stamp = track_msg.header.stamp;
+        track_arrow_marker.header.frame_id = msg->header.frame_id;
+        track_arrow_marker.header.stamp = msg->header.stamp;
         track_arrow_marker.ns = "track_arrow";
         track_arrow_marker.id = track_msg.id;
         track_arrow_marker.type = visualization_msgs::Marker::ARROW;
@@ -82,8 +82,8 @@ void LidarTrackVisualizationRos::visualizeLidarTracks(const custom_msgs::Track2D
 
         //track_id marker
         visualization_msgs::Marker track_id_marker; //visualize the track id at the center of the object            
-        track_id_marker.header.frame_id = track_msg.header.frame_id;
-        track_id_marker.header.stamp = track_msg.header.stamp;
+        track_id_marker.header.frame_id = msg->header.frame_id;
+        track_id_marker.header.stamp = msg->header.stamp;
         track_id_marker.ns = "track_id";
         track_id_marker.id = track_msg.id;
         track_id_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;

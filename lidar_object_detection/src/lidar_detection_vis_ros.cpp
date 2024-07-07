@@ -34,8 +34,8 @@ void LidarDetectionVisualizationRos::visualizeLidarDetections(const custom_msgs:
     //for detection boxes (width, length, rotation)
     for(const auto& detection : msg->detections) {
         visualization_msgs::Marker marker;
-        marker.header.frame_id = detection.header.frame_id;
-        marker.header.stamp = detection.header.stamp;
+        marker.header.frame_id = msg->header.frame_id;
+        marker.header.stamp = msg->header.stamp;
         marker.ns = "detections";
         marker.type = visualization_msgs::Marker::CUBE;
         marker.action = visualization_msgs::Marker::ADD;
@@ -62,8 +62,8 @@ void LidarDetectionVisualizationRos::visualizeLidarDetections(const custom_msgs:
     //for rectangle contours
     for(const auto& detection : msg->detections) {
         visualization_msgs::Marker marker;
-        marker.header.frame_id = detection.header.frame_id;
-        marker.header.stamp = detection.header.stamp;
+        marker.header.frame_id = msg->header.frame_id;
+        marker.header.stamp = msg->header.stamp;
         marker.ns = "rectangle contours";
         marker.type = visualization_msgs::Marker::LINE_STRIP;
         marker.action = visualization_msgs::Marker::ADD;

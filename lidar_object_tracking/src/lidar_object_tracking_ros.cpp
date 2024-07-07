@@ -36,10 +36,13 @@ bool LidarObjectTrackingRos::init(ros::NodeHandle& nh) {
 }
 
 void LidarObjectTrackingRos::lidarObjectTrackingPipeline(const custom_msgs::Detection2DArray::ConstPtr& msg) {
+    // create the message containing the object tracks
+    custom_msgs::Track2DArray confirmed_tracks_msg_array;
+    confirmed_tracks_msg_array.header.frame_id = lidar_frame_;
+    confirmed_tracks_msg_array.header.stamp = msg->header.stamp;
+
     int num_tracks = tracks_.size();
     int num_detections = msg->detections.size();
-    if(num_detections==0) {return;}
-    ros::Time curr_stamp = msg->detections[0].header.stamp;
     double dt = 0.1; //static for now, will make dynamic later
 
     //init tracks if they don't already exist
@@ -57,6 +60,7 @@ void LidarObjectTrackingRos::lidarObjectTrackingPipeline(const custom_msgs::Dete
             ));
             ++track_num_;
         }
+        output_tracks_pub_.publish(confirmed_tracks_msg_array); //empty message
         return;
     }
 
@@ -65,63 +69,65 @@ void LidarObjectTrackingRos::lidarObjectTrackingPipeline(const custom_msgs::Dete
     for(auto& track : tracks_) {
         track.kalmanPredict();
     }
-    
-    //loop through each current track, find distance between track and new detections
-    //currently using euclidean distance as cost metric, explore DIoU in the future
-    std::vector<std::vector<double>> cost_matrix(num_tracks, std::vector<double>(num_detections));
-    for(int i=0; i<num_tracks; ++i) {
-        for(int j=0; j<num_detections; ++j) {
-            cost_matrix[i][j] = compute_sqr_distance(tracks_[i], msg->detections[j]); 
-        }
-    }
 
-    //use Hungarian Algorithm to associate tracks with detections if distance is below threshold
-    std::vector<int> assignments;
-    hung_algo_.Solve(cost_matrix, assignments);
-
-    std::vector<bool> tracks_matched(num_tracks, false);
-    std::vector<bool> detections_matched(num_detections, false);
-    std::vector<pair<int,int>> matches;
-    for(int i=0; i<num_tracks;++i) {
-        if(assignments[i] != -1) {//track is assigned
-            //check if distance between tracks and assigned detections is below threshold
-            if(cost_matrix[i][assignments[i]] < dist_threshold_) {
-                //below threshold, add to list of matched pairs
-                matches.push_back(std::pair<int,int>(i,assignments[i]));
-                tracks_matched[i] = true;
-                detections_matched[assignments[i]] = true;
+    if(num_detections > 0) {
+        //loop through each current track, find distance between track and new detections
+        //currently using euclidean distance as cost metric, explore DIoU in the future
+        std::vector<std::vector<double>> cost_matrix(num_tracks, std::vector<double>(num_detections));
+        for(int i=0; i<num_tracks; ++i) {
+            for(int j=0; j<num_detections; ++j) {
+                cost_matrix[i][j] = compute_sqr_distance(tracks_[i], msg->detections[j]); 
             }
         }
-    }
 
-    //kalmanUpdate() to update assigned tracks with new detections
-    //assigned tracks are not coasted anymore, while existing tracks that are unmatched remain coasted
-    for(int i=0; i<matches.size(); ++i) {
-        custom_msgs::Detection2D detection = msg->detections[matches[i].second];
-        tracks_[matches[i].first].kalmanUpdate(
-            detection.position.x,
-            detection.position.y,
-            detection.theta,
-            detection.length,
-            detection.width
-        );
-    }
+        //use Hungarian Algorithm to associate tracks with detections if distance is below threshold
+        std::vector<int> assignments;
+        hung_algo_.Solve(cost_matrix, assignments);
 
-    //detections that were not assigned to existing tracks are added as new tracks
-    //these tracks are unconfirmed and not coasted
-    for(int i = 0; i<detections_matched.size(); ++i) {
-        if(detections_matched[i] == false) {
-            custom_msgs::Detection2D detection_to_add = msg->detections[i];
-            tracks_.push_back(Track2D(
-                track_num_,
-                detection_to_add.position.x,
-                detection_to_add.position.y,
-                detection_to_add.theta,
-                detection_to_add.length,
-                detection_to_add.width,
-                dt
-            ));
-            ++track_num_;
+        std::vector<bool> tracks_matched(num_tracks, false);
+        std::vector<bool> detections_matched(num_detections, false);
+        std::vector<pair<int,int>> matches;
+        for(int i=0; i<num_tracks;++i) {
+            if(assignments[i] != -1) {//track is assigned
+                //check if distance between tracks and assigned detections is below threshold
+                if(cost_matrix[i][assignments[i]] < dist_threshold_) {
+                    //below threshold, add to list of matched pairs
+                    matches.push_back(std::pair<int,int>(i,assignments[i]));
+                    tracks_matched[i] = true;
+                    detections_matched[assignments[i]] = true;
+                }
+            }
+        }
+
+        //kalmanUpdate() to update assigned tracks with new detections
+        //assigned tracks are not coasted anymore, while existing tracks that are unmatched remain coasted
+        for(int i=0; i<matches.size(); ++i) {
+            custom_msgs::Detection2D detection = msg->detections[matches[i].second];
+            tracks_[matches[i].first].kalmanUpdate(
+                detection.position.x,
+                detection.position.y,
+                detection.theta,
+                detection.length,
+                detection.width
+            );
+        }
+
+        //detections that were not assigned to existing tracks are added as new tracks
+        //these tracks are unconfirmed and not coasted
+        for(int i = 0; i<detections_matched.size(); ++i) {
+            if(detections_matched[i] == false) {
+                custom_msgs::Detection2D detection_to_add = msg->detections[i];
+                tracks_.push_back(Track2D(
+                    track_num_,
+                    detection_to_add.position.x,
+                    detection_to_add.position.y,
+                    detection_to_add.theta,
+                    detection_to_add.length,
+                    detection_to_add.width,
+                    dt
+                ));
+                ++track_num_;
+            }
         }
     }
 
@@ -145,14 +151,11 @@ void LidarObjectTrackingRos::lidarObjectTrackingPipeline(const custom_msgs::Dete
         }
     }
 
-    //populate detections message with confirmed tracks
-    custom_msgs::Track2DArray confirmed_tracks_msg_array;
+    //populate tracks message with confirmed tracks
     //publish only confirmed tracks
     for(auto& track : tracks_) {
         if(track.isConfirmed()) {
             custom_msgs::Track2D confirmed_track_msg;
-            confirmed_track_msg.header.frame_id = lidar_frame_;
-            confirmed_track_msg.header.stamp = curr_stamp;
             confirmed_track_msg.length = track.length_;
             confirmed_track_msg.width = track.width_;
             confirmed_track_msg.position.x = track.position_[0];
