@@ -4,19 +4,41 @@
 
 #include "lidar_object_tracking/lidar_object_tracking_ros.hpp"
 
-constexpr uint32_t QUEUE_SIZE = 5u;
-
 LidarObjectTrackingRos::LidarObjectTrackingRos(ros::NodeHandle& nh)
-    : input_detections_sub_(nh.subscribe("/lidar/hokuyo/detections_2d", QUEUE_SIZE, &LidarObjectTrackingRos::lidarObjectTrackingPipeline, this)),
-      output_tracks_pub_(nh.advertise<custom_msgs::Track2DArray>( "/lidar/hokuyo/tracks_2d", QUEUE_SIZE)),
-      lidar_frame_("hokuyo_link"), track_num_(0), dist_threshold_(0.5)
-    {
-        ;
+    : track_num_(0)
+{
+    if(!init(nh)) {
+        ros::requestShutdown();
     }
+}
+
+bool LidarObjectTrackingRos::init(ros::NodeHandle& nh) {
+    // set lidar frame using rosparam
+    nh.param("/lidar_perception/frame", lidar_frame_, std::string("lidar_link"));
+
+    // init subscribers and publishers using rosparams
+    std::string in_topic;
+    std::string out_topic;
+    int sub_queue_size;
+    int pub_queue_size;
+    nh.param("/lidar_perception/detection/out_topic", in_topic, std::string("/lidar/detections_2d"));
+    nh.param("/lidar_perception/tracking/out_topic", out_topic, std::string("/lidar/tracks_2d"));
+    nh.param("/lidar_perception/tracking/sub_queue_size", sub_queue_size, 1);
+    nh.param("/lidar_perception/tracking/pub_queue_size", pub_queue_size, 5);
+
+    input_detections_sub_ = nh.subscribe(in_topic, sub_queue_size, &LidarObjectTrackingRos::lidarObjectTrackingPipeline, this);
+    output_tracks_pub_ = nh.advertise<custom_msgs::Track2DArray>(out_topic, pub_queue_size);
+
+    // init tracking parameters with rosparams
+    nh.param("/lidar_perception/tracking/params/dist_threshold", dist_threshold_, 0.5);
+
+    return true;
+}
 
 void LidarObjectTrackingRos::lidarObjectTrackingPipeline(const custom_msgs::Detection2DArray::ConstPtr& msg) {
     int num_tracks = tracks_.size();
     int num_detections = msg->detections.size();
+    if(num_detections==0) {return;}
     ros::Time curr_stamp = msg->detections[0].header.stamp;
     double dt = 0.1; //static for now, will make dynamic later
 

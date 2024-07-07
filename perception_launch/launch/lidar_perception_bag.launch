@@ -1,4 +1,8 @@
 <launch>
+  <!-- load params -->
+  <arg name="lidar_perception_params_file" default="$(find perception_launch)/config/lidar_perception_params.yaml"/>
+  <rosparam command="load" file="$(arg lidar_perception_params_file)"/>
+
   <!-- static transformations -->
   <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_base_link" args="0 0 0 0 0 0 map base_link" />
   <node pkg="tf2_ros" type="static_transform_publisher" name="base_link_to_hokuyo" args="-0.114 0 0.0674 0 0 0 base_link hokuyo_link" />

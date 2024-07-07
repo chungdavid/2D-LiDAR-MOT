@@ -1,0 +1,48 @@
+# Sensor params
+sensors:
+  hokuyo:
+    topic: "/scan"
+    range_min: 0.019999999552965164
+    range_max: 30.0
+    angle_min: -2.356194496154785
+    angle_max: 2.356194496154785
+    frequency: 40.0
+    frame: "laser"
+
+  imu:
+    topic: "/imu"
+
+# Params for LiDAR perception nodes
+lidar_perception:
+  frame: "hokuyo_link"
+
+  preprocessing: # preprocessing node
+    out_topic: "/lidar/pointcloud2_preprocessed"
+    sub_queue_size: 5
+    pub_queue_size: 5
+    params:
+      pass_upper_x: 3.0
+      pass_lower_x: 0.25
+      pass_upper_y: 3.0
+      pass_lower_y: -3.0
+      sor_leaf_size: 0.03
+
+  detection: # detection node
+    out_topic: "/lidar/detections_2d"
+    vis_topic: "/lidar/detections_2d_markers"
+    sub_queue_size: 5
+    pub_queue_size: 5
+    params:
+      ec_cluster_tolerance: 0.15
+      ec_min_cluster_size: 10
+      ec_max_cluster_size: 40
+
+  tracking: # tracking node
+    out_topic: "/lidar/tracks_2d"
+    vis_topic: "/lidar/tracks_2d_markers"
+    sub_queue_size: 5
+    pub_queue_size: 5
+    params:
+      dist_threshold: 0.1
+
+

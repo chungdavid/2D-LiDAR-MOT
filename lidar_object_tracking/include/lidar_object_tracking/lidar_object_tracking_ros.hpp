@@ -23,6 +23,8 @@ private:
 public:
     LidarObjectTrackingRos(ros::NodeHandle& nh);
 
+    bool init(ros::NodeHandle& nh);
+
     void lidarObjectTrackingPipeline(const custom_msgs::Detection2DArray::ConstPtr& msg);
 
     double compute_sqr_distance(Track2D& track, custom_msgs::Detection2D detection) const;

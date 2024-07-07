@@ -12,5 +12,7 @@ private:
 public:
     LidarDetectionVisualizationRos(ros::NodeHandle& nh);
 
+    bool init(ros::NodeHandle& nh);
+
     void visualizeLidarDetections(const custom_msgs::Detection2DArray::ConstPtr& msg);
 };

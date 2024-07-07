@@ -12,5 +12,7 @@ private:
 public:
     LidarTrackVisualizationRos(ros::NodeHandle& nh);
 
+    bool init(ros::NodeHandle& nh);
+
     void visualizeLidarTracks(const custom_msgs::Track2DArray::ConstPtr& msg);
 };

@@ -5,31 +5,55 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/common/common.h>
 
-#include "detection/Detection2D.hpp"
+#include "lidar_object_detection/detection/Detection2D.hpp"
 #include <custom_msgs/Detection2DArray.h>
 
 #include "lidar_object_detection/lidar_object_detection_ros.hpp"
 
-constexpr uint32_t QUEUE_SIZE = 5u;
-
 LidarObjectDetectionRos::LidarObjectDetectionRos(ros::NodeHandle& nh)
- : input_cloud_sub_(nh.subscribe("/lidar/hokuyo/pointcloud2_preprocessed_cropped", QUEUE_SIZE, &LidarObjectDetectionRos::lidarObjectDetectionPipeline, this)),
-   output_detections_pub_(nh.advertise<custom_msgs::Detection2DArray>( "/lidar/hokuyo/detections_2d", QUEUE_SIZE)),
-   vis_cluster_markers_pub_(nh.advertise<visualization_msgs::MarkerArray>( "/visualization/lidar_cluster_markers", QUEUE_SIZE)),
-   kd_tree_(new pcl::search::KdTree<pcl::PointXYZ>), lidar_frame_("hokuyo_link")
- {
-    ec_.setClusterTolerance (0.10); // 5cm
-    ec_.setMinClusterSize (15);
+    : kd_tree_(new pcl::search::KdTree<pcl::PointXYZ>)
+{
+    if(!init(nh)) {
+        ros::requestShutdown();
+    }
+}
+
+bool LidarObjectDetectionRos::init(ros::NodeHandle& nh) {
+    // set lidar frame using rosparams
+    nh.param("/lidar_perception/frame", lidar_frame_, std::string("lidar_link"));
+
+    // init subscribers and publishers using rosparams
+    std::string in_topic;
+    std::string out_topic;
+    int sub_queue_size;
+    int pub_queue_size;
+    nh.param("/lidar_perception/preprocessing/out_topic", in_topic, std::string("/lidar/pointcloud2_preprocessed"));
+    nh.param("/lidar_perception/detection/out_topic", out_topic, std::string("/lidar/detections_2d"));
+    nh.param("/lidar_perception/detection/sub_queue_size", sub_queue_size, 1);
+    nh.param("/lidar_perception/detection/pub_queue_size", pub_queue_size, 5);
+
+    input_cloud_sub_ = nh.subscribe(in_topic, sub_queue_size, &LidarObjectDetectionRos::lidarObjectDetectionPipeline, this);
+    output_detections_pub_ = nh.advertise<custom_msgs::Detection2DArray>(out_topic, pub_queue_size);
+    // vis_cluster_markers_pub_ = nh.advertise<visualization_msgs::MarkerArray>( "/lidar/cluster_markers", pub_queue_size);
+    
+    // init detection parameters using rosparams
+    nh.param("/lidar_perception/detection/params/ec_cluster_tolerance", ec_cluster_tolerance_, 0.10f);
+    nh.param("/lidar_perception/detection/params/ec_min_cluster_size", ec_min_cluster_size_, 15);
+    nh.param("/lidar_perception/detection/params/ec_max_cluster_size", ec_max_cluster_size_, 20);
+    
+    ec_.setClusterTolerance (ec_cluster_tolerance_);
+    ec_.setMinClusterSize (ec_min_cluster_size_);
+    ec_.setMaxClusterSize (ec_max_cluster_size_);
     ec_.setSearchMethod (kd_tree_);
- }
+
+    return true;
+}
 
 void LidarObjectDetectionRos::lidarObjectDetectionPipeline(const pcl::PCLPointCloud2ConstPtr& msg) {
     //convert msg to pcl::PointXYZ to enable use with other PCL modules
     pcl::PointCloud<pcl::PointXYZ>::Ptr xyz_cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromPCLPointCloud2(*msg, *xyz_cloud);
 
-    //If no point clouds, don't do anything
-    
     //clustering
     kd_tree_->setInputCloud (xyz_cloud);
     ec_.setInputCloud (xyz_cloud);
@@ -74,35 +98,37 @@ void LidarObjectDetectionRos::lidarObjectDetectionPipeline(const pcl::PCLPointCl
     //publish the detections
     output_detections_pub_.publish(detection_msg_array);
 
-    visualizeClusterMarkers(cluster_indices, xyz_cloud, (*msg).header.stamp);
+    // Visualize the clusters
+    // visualizeClusterMarkers(cluster_indices, xyz_cloud, (*msg).header.stamp);
 }
 
-void LidarObjectDetectionRos::visualizeClusterMarkers(std::vector<pcl::PointIndices>& cluster_indices, pcl::PointCloud<pcl::PointXYZ>::Ptr& xyz_cloud_ptr, uint64_t pcl_time_stamp){
-    visualization_msgs::MarkerArray marker_array;
-    int i = 0;
-    for (const auto& cluster : cluster_indices) {
-        Eigen::Vector4f min_p, max_p;
-        pcl::getMinMax3D(*xyz_cloud_ptr, cluster, min_p, max_p);
-        visualization_msgs::Marker marker;
-        marker.header.frame_id = lidar_frame_;
-        marker.header.stamp.sec = pcl_time_stamp / 1000000000;
-        marker.header.stamp.nsec = pcl_time_stamp % 1000000000;
-        marker.ns = "cluster marker";
-        marker.type = visualization_msgs::Marker::CUBE;
-        marker.action = visualization_msgs::Marker::ADD;
-        marker.id = i;
-        marker.pose.orientation.w = 1.0;
-        marker.color.r = 1.0;
-        marker.color.a = 0.35;
-        Eigen::Vector4f mid_p = (min_p + max_p) / 2; 
-        marker.pose.position.x = mid_p[0]; 
-        marker.pose.position.y = mid_p[1];
-        marker.pose.position.z = mid_p[2];
-        marker.scale.x = max_p[0] - min_p[0];
-        marker.scale.y = max_p[1] - min_p[1];
-        marker.scale.z = 0.001;
-        marker_array.markers.push_back(marker);
-        ++i;
-    }
-    vis_cluster_markers_pub_.publish(marker_array);
-}
+// void LidarObjectDetectionRos::visualizeClusterMarkers(std::vector<pcl::PointIndices>& cluster_indices, pcl::PointCloud<pcl::PointXYZ>::Ptr& xyz_cloud_ptr, uint64_t pcl_time_stamp){
+//     visualization_msgs::MarkerArray marker_array;
+//     int i = 0;
+//     for (const auto& cluster : cluster_indices) {
+//         Eigen::Vector4f min_p, max_p;
+//         pcl::getMinMax3D(*xyz_cloud_ptr, cluster, min_p, max_p);
+//         visualization_msgs::Marker marker;
+//         marker.header.frame_id = lidar_frame_;
+//         marker.header.stamp.sec = pcl_time_stamp / 1000000000;
+//         marker.header.stamp.nsec = pcl_time_stamp % 1000000000;
+//         marker.ns = "cluster marker";
+//         marker.type = visualization_msgs::Marker::CUBE;
+//         marker.action = visualization_msgs::Marker::ADD;
+//         marker.id = i;
+//         marker.pose.orientation.w = 1.0;
+//         marker.color.r = 1.0;
+//         marker.color.a = 0.35;
+//         Eigen::Vector4f mid_p = (min_p + max_p) / 2; 
+//         marker.pose.position.x = mid_p[0]; 
+//         marker.pose.position.y = mid_p[1];
+//         marker.pose.position.z = mid_p[2];
+//         marker.scale.x = max_p[0] - min_p[0];
+//         marker.scale.y = max_p[1] - min_p[1];
+//         marker.scale.z = 0.001;
+//         marker.lifetime = ros::Duration(0.25);
+//         marker_array.markers.push_back(marker);
+//         ++i;
+//     }
+//     vis_cluster_markers_pub_.publish(marker_array);
+// }

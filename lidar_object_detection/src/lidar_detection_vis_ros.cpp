@@ -4,14 +4,29 @@
 
 #include "lidar_object_detection/lidar_detection_vis_ros.hpp"
 
-constexpr uint32_t QUEUE_SIZE = 5u;
 
-LidarDetectionVisualizationRos::LidarDetectionVisualizationRos(ros::NodeHandle& nh)
-    : input_detections_sub_(nh.subscribe("/lidar/hokuyo/detections_2d", QUEUE_SIZE, &LidarDetectionVisualizationRos::visualizeLidarDetections, this)),
-      vis_detections_pub_(nh.advertise<visualization_msgs::MarkerArray>( "/visualization/lidar_detections", QUEUE_SIZE))
-    {
-        ;
+LidarDetectionVisualizationRos::LidarDetectionVisualizationRos(ros::NodeHandle& nh) {
+    if(!init(nh)) {
+        ros::requestShutdown;
     }
+}
+
+bool LidarDetectionVisualizationRos::init(ros::NodeHandle& nh) {
+    // initialize publisher and subscriber using rosparams
+    std::string in_topic;
+    std::string vis_topic;
+    int sub_queue_size;
+    int pub_queue_size;
+    nh.param("/lidar_perception/detection/out_topic", in_topic, std::string("/lidar/detections_2d"));
+    nh.param("/lidar_perception/detection/vis_topic", vis_topic, std::string("/lidar/detections_2d_markers"));
+    nh.param("/lidar_perception/detection/sub_queue_size", sub_queue_size, 1);
+    nh.param("/lidar_perception/detection/pub_queue_size", pub_queue_size, 5);
+
+    input_detections_sub_ = nh.subscribe(in_topic, sub_queue_size, &LidarDetectionVisualizationRos::visualizeLidarDetections, this);
+    vis_detections_pub_ = nh.advertise<visualization_msgs::MarkerArray>(vis_topic, pub_queue_size);
+    
+    return true;
+}
 
 void LidarDetectionVisualizationRos::visualizeLidarDetections(const custom_msgs::Detection2DArray::ConstPtr& msg) {
     visualization_msgs::MarkerArray marker_array;
@@ -40,6 +55,7 @@ void LidarDetectionVisualizationRos::visualizeLidarDetections(const custom_msgs:
         marker.scale.x = detection.width;
         marker.scale.y = detection.length;
         marker.scale.z = 0.001;
+        marker.lifetime = ros::Duration(0.25);
         marker_array.markers.push_back(marker);
         ++i;
     }
@@ -65,6 +81,7 @@ void LidarDetectionVisualizationRos::visualizeLidarDetections(const custom_msgs:
         p.x = detection.corners[0].x;
         p.y = detection.corners[0].y;
         marker.points.push_back(p);
+        marker.lifetime = ros::Duration(0.25);
         marker_array.markers.push_back(marker);
         ++i;
     }

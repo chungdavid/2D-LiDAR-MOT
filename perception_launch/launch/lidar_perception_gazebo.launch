@@ -1,4 +1,8 @@
 <launch>
+      <!-- load params -->
+    <arg name="lidar_perception_params_file" default="$(find perception_launch)/config/lidar_perception_params.yaml"/>
+    <rosparam command="load" file="$(arg lidar_perception_params_file)"/>
+
     <!-- static transformations -->
     <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom" />
 

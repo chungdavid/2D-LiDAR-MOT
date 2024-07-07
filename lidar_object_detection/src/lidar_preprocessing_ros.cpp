@@ -3,15 +3,39 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl_conversions/pcl_conversions.h>
 
-constexpr uint32_t QUEUE_SIZE = 5u;
+LidarPreprocessingRos::LidarPreprocessingRos(ros::NodeHandle& nh) {
+    if(!init(nh)) {
+        ros::requestShutdown();
+    }
+}
 
-LidarPreprocessingRos::LidarPreprocessingRos(ros::NodeHandle& nh)
-    : input_scan_sub_(nh.subscribe("/scan", QUEUE_SIZE, &LidarPreprocessingRos::lidarPreprocessingPipeline, this)),
-      output_cloud_pub_(nh.advertise<pcl::PCLPointCloud2>("/lidar/hokuyo/pointcloud2_preprocessed", QUEUE_SIZE)),
-      output_cloud_pub_cropped_(nh.advertise<pcl::PCLPointCloud2>("/lidar/hokuyo/pointcloud2_preprocessed_cropped", QUEUE_SIZE)),
-      lidar_frame_("hokuyo_link")
-{
-    sor_.setLeafSize (0.01, 0.01, 0.01); //1 cm
+bool LidarPreprocessingRos::init(ros::NodeHandle& nh) {
+    // set lidar frame using rosparams
+    nh.param("/lidar_perception/frame", lidar_frame_, std::string("hokuyo_link"));
+    
+    // init publisher and subscribers using rosparams
+    std::string in_topic;
+    std::string out_topic;
+    int sub_queue_size;
+    int pub_queue_size;
+    nh.param("/sensors/hokuyo/topic", in_topic, std::string("/scan"));
+    nh.param("/lidar_perception/preprocessing/out_topic", out_topic, std::string("/lidar/pointcloud2_preprocessed"));
+    nh.param("/lidar_perception/preprocessing/sub_queue_size", sub_queue_size, 1);
+    nh.param("/lidar_perception/preprocessing/pub_queue_size", pub_queue_size, 5);
+    
+    input_scan_sub_ = nh.subscribe(in_topic, sub_queue_size, &LidarPreprocessingRos::lidarPreprocessingPipeline, this);
+    output_cloud_pub_ = nh.advertise<pcl::PCLPointCloud2>(out_topic, pub_queue_size);
+    
+    // set preprocessing parameters using rosparams
+    nh.param("/lidar_perception/preprocessing/params/sor_leaf_size", sor_leaf_size_, 0.05f);
+    nh.param("/lidar_perception/preprocessing/params/pass_upper_x", pass_upper_x_, 0.05f);
+    nh.param("/lidar_perception/preprocessing/params/pass_lower_x", pass_lower_x_, -0.05f);
+    nh.param("/lidar_perception/preprocessing/params/pass_upper_y", pass_upper_y_, 0.05f);
+    nh.param("/lidar_perception/preprocessing/params/pass_lower_y", pass_lower_y_, -0.05f);
+
+    sor_.setLeafSize (sor_leaf_size_, sor_leaf_size_, sor_leaf_size_);
+    
+    return true;
 }
 
 void LidarPreprocessingRos::lidarPreprocessingPipeline(const sensor_msgs::LaserScan::ConstPtr& msg) {
@@ -39,12 +63,12 @@ void LidarPreprocessingRos::lidarPreprocessingPipeline(const sensor_msgs::LaserS
     //filter along y
     pass_.setInputCloud(pcl_cloud_filtered); 
     pass_.setFilterFieldName ("y");
-    pass_.setFilterLimits (-1.5,1.5);
+    pass_.setFilterLimits (pass_lower_y_, pass_upper_y_);
     pass_.filter (*pcl_cloud_cropped);
     //filter along x
     pass_.setInputCloud(pcl_cloud_cropped); 
     pass_.setFilterFieldName ("x");
-    pass_.setFilterLimits (0.25, 2);
+    pass_.setFilterLimits (pass_lower_x_, pass_upper_x_);
     pass_.filter (*pcl_cloud_cropped);
     
     //bilateral or gaussian filter?
@@ -53,8 +77,6 @@ void LidarPreprocessingRos::lidarPreprocessingPipeline(const sensor_msgs::LaserS
     // std::cout << "Timestamp of messsage in: "<< (*msg).header.stamp.sec << (*msg).header.stamp.nsec << "       Timestamp of message out: " << (*pcl_cloud_cropped).header.stamp << "\n"; 
     //..looks like converting to PCLPointCloud2 changes the stamp from nano seconds to milliseconds
 
-    //publish the preprocessed LiDAR data
-    // output_cloud_pub_.publish(*pcl_cloud_filtered);  
     //publish the preprocessed and cropped lidar data
-    output_cloud_pub_cropped_.publish(*pcl_cloud_cropped);
+    output_cloud_pub_.publish(*pcl_cloud_cropped);
 }

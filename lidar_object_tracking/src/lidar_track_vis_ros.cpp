@@ -4,14 +4,28 @@
 
 #include "lidar_object_tracking/lidar_track_vis_ros.hpp"
 
-constexpr uint32_t QUEUE_SIZE = 5u;
-
-LidarTrackVisualizationRos::LidarTrackVisualizationRos(ros::NodeHandle& nh)
-    : input_tracks_sub_(nh.subscribe("/lidar/hokuyo/tracks_2d", QUEUE_SIZE, &LidarTrackVisualizationRos::visualizeLidarTracks, this)),
-      vis_tracks_pub_(nh.advertise<visualization_msgs::MarkerArray>( "/lidar/hokuyo/track_markers", QUEUE_SIZE))
-    {
-        ;
+LidarTrackVisualizationRos::LidarTrackVisualizationRos(ros::NodeHandle& nh) {
+    if(!init(nh)) {
+        ros::requestShutdown;
     }
+}
+
+bool LidarTrackVisualizationRos::init(ros::NodeHandle& nh) {
+    // initialize publisher and subscriber using rosparams
+    std::string in_topic;
+    std::string vis_topic;
+    int sub_queue_size;
+    int pub_queue_size;
+    nh.param("/lidar_perception/tracking/out_topic", in_topic, std::string("/lidar/tracks_2d"));
+    nh.param("/lidar_perception/tracking/vis_topic", vis_topic, std::string("/lidar/tracks_2d_markers"));
+    nh.param("/lidar_perception/tracking/sub_queue_size", sub_queue_size, 1);
+    nh.param("/lidar_perception/tracking/pub_queue_size", pub_queue_size, 5);
+
+    input_tracks_sub_ = nh.subscribe(in_topic, sub_queue_size, &LidarTrackVisualizationRos::visualizeLidarTracks, this);
+    vis_tracks_pub_ = nh.advertise<visualization_msgs::MarkerArray>(vis_topic, pub_queue_size);
+
+    return true;
+}
 
 
 void LidarTrackVisualizationRos::visualizeLidarTracks(const custom_msgs::Track2DArray::ConstPtr& msg) {
@@ -38,6 +52,7 @@ void LidarTrackVisualizationRos::visualizeLidarTracks(const custom_msgs::Track2D
         track_box_marker.scale.x = track_msg.width;
         track_box_marker.scale.y = track_msg.length;
         track_box_marker.scale.z = 0.001;
+        track_box_marker.lifetime = ros::Duration(0.25);
         marker_array.markers.push_back(track_box_marker);
 
         //arrow marker
@@ -62,6 +77,7 @@ void LidarTrackVisualizationRos::visualizeLidarTracks(const custom_msgs::Track2D
         p.y = track_msg.position.y + track_msg.velocity.y;
         p.z = 0;
         track_arrow_marker.points.push_back(p);
+        track_arrow_marker.lifetime = ros::Duration(0.25);
         marker_array.markers.push_back(track_arrow_marker);
 
         //track_id marker
@@ -80,6 +96,7 @@ void LidarTrackVisualizationRos::visualizeLidarTracks(const custom_msgs::Track2D
         track_id_marker.pose.position.y = track_msg.position.y;   
         track_id_marker.pose.position.z = 0.2;
         track_id_marker.text = std::to_string(track_msg.id);
+        track_id_marker.lifetime = ros::Duration(0.25);
         marker_array.markers.push_back(track_id_marker);
     }        
 
