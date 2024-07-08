@@ -51,6 +51,11 @@
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>eigen</build_depend>
 
+  <build_depend>roscpp</build_depend>
+  <exec_depend>roscpp</exec_depend>
+
+  <build_depend>custom_msgs</build_depend>
+  <exec_depend>custom_msgs</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
