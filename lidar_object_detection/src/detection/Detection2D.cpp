@@ -83,7 +83,7 @@ void Detection2D::rectangle_search(Eigen::MatrixXf& cluster_matrix) {
     //             -sinf(-min_cost[1]), cosf(-min_cost[1]), 0,
     //             0, 0, 1;
     // Eigen::Quaternionf rot_quat(cosf(min_cost[1]/2.0F), 0.0F, 0.0F, sinf(min_cost[1]/2.0F)); //w, x, y, z
-    theta_ = -min_cost[1];
+    theta_ = min_cost[1];
 
     float a1 = cos_s;
     float b1 = sin_s;

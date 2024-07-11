@@ -40,10 +40,10 @@ void LidarTrackVisualizationRos::visualizeLidarTracks(const custom_msgs::Track2D
         track_box_marker.id = track_msg.id;
         track_box_marker.type = visualization_msgs::Marker::CUBE;
         track_box_marker.action = visualization_msgs::Marker::ADD;
-        track_box_marker.pose.orientation.w = cosf(-track_msg.theta/2.0F);
+        track_box_marker.pose.orientation.w = cosf(track_msg.theta/2.0F);
         track_box_marker.pose.orientation.x = 0;
         track_box_marker.pose.orientation.y = 0;
-        track_box_marker.pose.orientation.z = sinf(-track_msg.theta/2.0F);
+        track_box_marker.pose.orientation.z = sinf(track_msg.theta/2.0F);
         track_box_marker.color.r = 1.0;
         track_box_marker.color.a = 1.0;
         track_box_marker.pose.position.x = track_msg.position.x; 

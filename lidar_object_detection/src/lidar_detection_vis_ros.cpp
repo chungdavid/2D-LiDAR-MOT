@@ -42,10 +42,10 @@ void LidarDetectionVisualizationRos::visualizeLidarDetections(const custom_msgs:
         marker.id = i;
 
         // Eigen::Quaternionf rot_quat(cosf(-detection.theta_/2.0F), 0.0F, 0.0F, sinf(-detection.theta_/2.0F)); //w, x, y, z
-        marker.pose.orientation.w = cosf(-detection.theta/2.0F);
+        marker.pose.orientation.w = cosf(detection.theta/2.0F);
         marker.pose.orientation.x = 0;
         marker.pose.orientation.y = 0;
-        marker.pose.orientation.z = sinf(-detection.theta/2.0F);
+        marker.pose.orientation.z = sinf(detection.theta/2.0F);
 
         marker.color.r = 1.0;
         marker.color.a = 0.35;
