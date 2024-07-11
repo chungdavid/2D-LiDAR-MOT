@@ -59,6 +59,18 @@ void LidarObjectDetectionRos::lidarObjectDetectionPipeline(const pcl::PCLPointCl
     ec_.setInputCloud (xyz_cloud);
     std::vector<pcl::PointIndices> cluster_indices; //vector containing clusters of indices
     ec_.extract (cluster_indices);
+
+    // remove the clusters that come from wall points
+    // this is a naive method, it just removes clusters that are above a certain length
+    for (std::vector<pcl::PointIndices>::iterator it = cluster_indices.begin(); it != cluster_indices.end();) {
+        Eigen::Vector4f min_p, max_p;
+        pcl::getMinMax3D(*xyz_cloud, *it, min_p, max_p);
+        if(std::abs(max_p[0]-min_p[0]) > 1 || std::abs(max_p[1]-min_p[1]) > 1) {
+            cluster_indices.erase(it);
+        } else {
+            ++it;
+        }
+    }
     
     // create the message that will store the detections
     custom_msgs::Detection2DArray detection_msg_array;
