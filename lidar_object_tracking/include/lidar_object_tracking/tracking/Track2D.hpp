@@ -32,6 +32,7 @@ public:
 
 private:
     KalmanFilter kalman_filter_;
+    KalmanFilter kalman_filter_shape_;
 
     bool coasted_;
     bool confirmed_;
