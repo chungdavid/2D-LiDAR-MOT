@@ -6,7 +6,8 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /MarkerArray1/Status1
+        - /MarkerArray2
+        - /MarkerArray2/Namespaces1
       Splitter Ratio: 0.5
     Tree Height: 555
   - Class: rviz/Selection
@@ -90,6 +91,15 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /lidar/detections_2d_markers
+      Name: MarkerArray
+      Namespaces:
+        detections: false
+        rectangle contours: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -118,7 +128,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 10.784683227539062
+      Distance: 2.9476938247680664
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
